@@ -41,6 +41,12 @@ runs/<jjjj-mm>-<name>/
 Eine neue Ausgabe bekommt einen eigenen Ordner unter `runs/` und je eine Zeile in den
 Tabellen von `README.md` und `README.de.md` sowie eine Karte in `index.html`.
 
+Die Pages-Seite wird bei jedem Push auf `main` gebaut (`.github/workflows/pages.yml`, lokal
+`npm ci && npm run build` nach `_site/`). Der Build rendert `README.md` und `README.de.md`
+jeder Ausgabe zu `report.html` und `report.de.html`, schreibt relative Links im Bericht auf
+ihre Ziele auf der Seite um und bricht ab, wenn ein lokaler Link ins Leere zeigt. Die
+Berichte bleiben Markdown; das HTML wird nie eingecheckt.
+
 ## Lizenz
 
 Texte und Folien stehen unter [CC BY 4.0](LICENSE).
