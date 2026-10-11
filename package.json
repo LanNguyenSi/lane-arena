@@ -1,0 +1,11 @@
+{
+  "name": "lane-arena-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-site.mjs"
+  },
+  "devDependencies": {
+    "marked": "18.0.14"
+  }
+}
