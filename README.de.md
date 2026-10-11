@@ -41,8 +41,8 @@ runs/<jjjj-mm>-<name>/
 Eine neue Ausgabe bekommt einen eigenen Ordner unter `runs/` und je eine Zeile in den
 Tabellen von `README.md` und `README.de.md` sowie eine Karte in `index.html`.
 
-Das Repository enthält nur Berichte und Folien. Briefs, versteckte Tests, Laufprotokolle
-und das Harness, mit dem eine Ausgabe lief, sind hier nicht veröffentlicht.
+Zu jeder Ausgabe enthält das Repository nur den Bericht und die Folien. Briefs, versteckte
+Tests, Laufprotokolle und das Harness, mit dem sie lief, sind hier nicht veröffentlicht.
 
 Die Pages-Seite wird bei jedem Push auf `main` gebaut (`.github/workflows/pages.yml`, lokal
 `npm ci && npm run build` nach `_site/`). Der Build rendert `README.md` und `README.de.md`

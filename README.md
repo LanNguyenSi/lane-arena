@@ -40,8 +40,8 @@ runs/<yyyy-mm>-<name>/
 A new edition gets its own folder under `runs/`, a row in the tables of `README.md` and
 `README.de.md`, and a card in `index.html`.
 
-The repository holds only the reports and slides. The briefs, hidden tests, run logs and
-the harness that ran an edition are not published here.
+For each edition the repository holds only the report and the slides. The briefs, hidden
+tests, run logs and the harness that ran it are not published here.
 
 The Pages site is built on every push to `main` (`.github/workflows/pages.yml`, locally
 `npm ci && npm run build` into `_site/`). The build renders each edition's `README.md` and
