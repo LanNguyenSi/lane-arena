@@ -1,41 +1,45 @@
-# Lane-Arena
+**English** | [Deutsch](README.de.md)
 
-Wie gut schlägt sich ein lokal betriebenes Open-Weight-Modell, die "Lane", als
-Implementierer gegen Cloud-Modelle? Die Lane-Arena lässt sie auf echten, offenen Tickets
-gegeneinander antreten: gleiches Briefing, isolierte Repository-Klone, blinder Review
-und versteckte Tests.
+# Lane Arena
 
-Präsentationen ansehen: https://lannguyensi.github.io/lane-arena/
+How well does a locally hosted open-weight model, the "lane", hold up as an implementer
+against cloud models? The Lane Arena puts them head to head on real, open tickets: the same
+brief, isolated repository clones, a blind review and hidden tests.
 
-## Ausgaben
+All editions and slides: https://lannguyensi.github.io/lane-arena/
 
-| Ausgabe | Datum | Aufgaben | Teilnehmer | Bericht | Folien |
+## Editions
+
+| Edition | Date | Tasks | Participants | Report | Slides |
 |---|---|---|---|---|---|
-| Pilot | Oktober 2026 | 2 (mittel, schwer) | Lane (Qwen3.8-Flash-Next), Claude Haiku/Sonnet/Opus 5.5, GPT-6.1-Sol, GPT-6-Luna | [Bericht](runs/2026-10-pilot/README.md) | [online](https://lannguyensi.github.io/lane-arena/runs/2026-10-pilot/) · [PDF](runs/2026-10-pilot/presentation.pdf) |
+| Pilot | October 2026 | 2 (medium, hard) | Lane (Qwen3.8-Flash-Next), Claude Haiku/Sonnet/Opus 5.5, GPT-6.1-Sol, GPT-6-Luna | [Report](runs/2026-10-pilot/README.md) | [online](https://lannguyensi.github.io/lane-arena/runs/2026-10-pilot/) · [PDF](runs/2026-10-pilot/presentation.pdf) |
 
-## Spielregeln (gelten für alle Ausgaben)
+## Rules (apply to every edition)
 
-- Alle Teilnehmer bekommen pro Aufgabe denselben Brief und arbeiten in einem eigenen,
-  isolierten Klon desselben Basis-Commits.
-- Jede Lösung prüft ein frischer Reviewer, der nicht erfährt, von wem sie stammt.
-- Versteckte Tests werden vor dem ersten Lauf eingefroren und am Ausgangsstand gegengeprüft.
-- **Bestanden** heißt: Der blinde Review liefert `accept` oder `accept_with_notes`.
-  Höchstens 3 Runden. In einer Fix-Runde bekommt der Teilnehmer den Brief plus die
-  Review-Findings ab Schweregrad medium.
-- Abweichungen von diesen Regeln stehen im Bericht der jeweiligen Ausgabe.
+- All participants get the same brief per task and work in their own isolated clone of the
+  same base commit.
+- A fresh reviewer checks every solution without learning who wrote it.
+- Hidden tests are frozen before the first run and checked against the base state.
+- **Passed** means: the blind review returns `accept` or `accept_with_notes`. At most 3
+  rounds. In a fix round the participant gets the brief plus the review findings of
+  severity medium and above.
+- Deviations from these rules are documented in the report of the respective edition.
 
-## Aufbau
+## Layout
 
 ```
-runs/<jjjj-mm>-<name>/
-  README.md          Bericht
-  index.html         Präsentation (läuft über GitHub Pages)
-  presentation.pdf   Präsentation als PDF
+runs/<yyyy-mm>-<name>/
+  README.md             report (English)
+  README.de.md          report (German)
+  index.html            slides, English (served via GitHub Pages)
+  de.html               slides, German
+  presentation.pdf      slides as PDF (English)
+  presentation.de.pdf   slides as PDF (German)
 ```
 
-Eine neue Ausgabe bekommt einen eigenen Ordner unter `runs/` und je eine Zeile in der
-Tabelle oben und in `index.html`.
+A new edition gets its own folder under `runs/`, a row in the tables of `README.md` and
+`README.de.md`, and a card in `index.html`.
 
-## Lizenz
+## License
 
-Texte und Folien stehen unter [CC BY 4.0](LICENSE).
+Texts and slides are licensed under [CC BY 4.0](LICENSE).

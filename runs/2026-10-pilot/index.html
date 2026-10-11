@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lane-Arena</title>
+<title>Lane Arena</title>
 <style>
 :root {
   --bg: #f7f6f2; --fg: #1d1d1b; --muted: #6b6a64; --card: #ffffff; --line: #e2e0d8;
@@ -55,6 +55,8 @@ th { color: var(--muted); font-weight: 600; font-size: 14px; text-transform: upp
 .note { color: var(--muted); font-size: 14px; }
 .nav { position: fixed; bottom: 16px; left: 0; right: 0; display: flex; justify-content: center; gap: 12px; align-items: center; color: var(--muted); font-size: 14px; }
 .nav button { background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; font: inherit; cursor: pointer; }
+.nav a { color: var(--muted); text-decoration: none; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--card); }
+.nav a:hover { color: var(--fg); }
 @page { size: 1280px 720px; margin: 0; }
 @media print {
   html, body { height: auto; overflow: visible; background: var(--bg); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -74,81 +76,80 @@ th { color: var(--muted); font-weight: 600; font-size: 14px; text-transform: upp
 </head>
 <body>
 <div class="deck">
-
 <section class="slide active">
-  <div class="kicker">Pilot, 10. und 11. Oktober 2026</div>
-  <h1>Lane-Arena: lokales Modell gegen Claude und GPT</h1>
-  <p class="sub">Zwei echte Tickets, sechs Implementierer, isolierte Klone, blinder Review und versteckte Tests.</p>
+  <div class="kicker">Pilot, 10 and 11 October 2026</div>
+  <h1>Lane Arena: local model vs. Claude and GPT</h1>
+  <p class="sub">Two real tickets, six implementers, isolated clones, a blind review and hidden tests.</p>
 </section>
 
 <section class="slide">
-  <div class="kicker">Die Frage</div>
-  <h2>Hält ein lokales Open-Weight-Modell als Implementierer mit?</h2>
+  <div class="kicker">The question</div>
+  <h2>Can a local open-weight model keep up as an implementer?</h2>
   <div class="grid g2">
-    <div class="card"><h3>Hintergrund</h3><p>Die lokale Lane übernimmt heute Aufgaben, die sonst der Claude-Implementer mittlerer Stufe bekäme. Sicherheitskritisches und Schweres bleibt bei Claude.</p></div>
-    <div class="card"><h3>Ziel des Piloten</h3><p>Ein wiederholbares Harness bauen und einen ersten Vergleich auf einer mittleren und einer schweren Aufgabe liefern.</p></div>
+    <div class="card"><h3>Background</h3><p>Today the local lane takes on tasks that would otherwise go to the mid-tier Claude implementer. Security-critical and hard work stays with Claude.</p></div>
+    <div class="card"><h3>Goal of the pilot</h3><p>Build a repeatable harness and deliver a first comparison on one medium and one hard task.</p></div>
   </div>
 </section>
 
 <section class="slide">
-  <div class="kicker">Teilnehmer</div>
-  <h2>Sechs Implementierer, gleicher Brief</h2>
+  <div class="kicker">Participants</div>
+  <h2>Six implementers, same brief</h2>
   <div class="grid g3">
-    <div class="card"><h3><span class="dot" style="background:var(--lane)"></span>Lane</h3><p>Qwen3.8-Flash-Next über opencode, lokal auf dem Mac Studio</p></div>
+    <div class="card"><h3><span class="dot" style="background:var(--lane)"></span>Lane</h3><p>Qwen3.8-Flash-Next via opencode, running locally on the Mac Studio</p></div>
     <div class="card"><h3><span class="dot" style="background:var(--haiku)"></span>Haiku 5.5</h3><p><code>claude --bare -p</code></p></div>
     <div class="card"><h3><span class="dot" style="background:var(--sonnet)"></span>Sonnet 5.5</h3><p><code>claude --bare -p</code></p></div>
     <div class="card"><h3><span class="dot" style="background:var(--opus)"></span>Opus 5.5</h3><p><code>claude --bare -p</code></p></div>
-    <div class="card"><h3><span class="dot" style="background:var(--sol)"></span>GPT-6.1-Sol</h3><p><code>codex exec</code> mit ChatGPT-Konto</p></div>
-    <div class="card"><h3><span class="dot" style="background:var(--luna)"></span>GPT-6-Luna</h3><p><code>codex exec</code> mit ChatGPT-Konto</p></div>
+    <div class="card"><h3><span class="dot" style="background:var(--sol)"></span>GPT-6.1-Sol</h3><p><code>codex exec</code> with a ChatGPT account</p></div>
+    <div class="card"><h3><span class="dot" style="background:var(--luna)"></span>GPT-6-Luna</h3><p><code>codex exec</code> with a ChatGPT account</p></div>
   </div>
-  <p class="note">Claude: kein MCP, keine Hooks, kein Memory, keine Subagenten. Codex: keine User-Config, keine Regeln, kein MCP, kein Memory. So entspricht der Kontext dem der Lane.</p>
+  <p class="note">Claude: no MCP, no hooks, no memory, no subagents. Codex: no user config, no rules, no MCP, no memory. This matches the lane's context.</p>
 </section>
 
 <section class="slide">
-  <div class="kicker">Die lokale Lane</div>
-  <h2>Hardware und Durchsatz</h2>
+  <div class="kicker">The local lane</div>
+  <h2>Hardware and throughput</h2>
   <div class="grid g2">
-    <div class="card"><h3>Mac Studio, Apple M5 Max</h3><ul><li>18 CPU- und 40 GPU-Kerne, 128 GB Unified Memory</li><li>llama.cpp (Metal), 262k Kontext, 2 Slots</li><li>MTP für spekulatives Decoding</li></ul></div>
-    <div class="card"><h3>Qwen3.8-Flash-Next</h3><ul><li>MoE mit 125B Parametern, davon 6B aktiv</li><li>4-Bit-GGUF (UD-IQ4_XS), 93,7 GB</li><li>Thinking an, Effort per Default xhigh</li></ul></div>
+    <div class="card"><h3>Mac Studio, Apple M5 Max</h3><ul><li>18 CPU and 40 GPU cores, 128 GB unified memory</li><li>llama.cpp (Metal), 262k context, 2 slots</li><li>MTP for speculative decoding</li></ul></div>
+    <div class="card"><h3>Qwen3.8-Flash-Next</h3><ul><li>MoE with 125B parameters, 6B active</li><li>4-bit GGUF (UD-IQ4_XS), 93.7 GB</li><li>Thinking on, effort xhigh by default</li></ul></div>
   </div>
   <div class="grid g2">
-    <div class="card"><div class="big">~826 tok/s</div><p>Prefill bei einem 16k-Prompt (live gemessen)</p></div>
-    <div class="card"><div class="big">54 bis 59 tok/s</div><p>Generierung mit Thinking und MTP</p></div>
-  </div>
-</section>
-
-<section class="slide">
-  <div class="kicker">Die Aufgaben</div>
-  <h2>Zwei echte offene Tickets</h2>
-  <div class="grid g2">
-    <div class="card"><h3>M: Bedienelemente je nach Rolle</h3><p>Frontend (React/Next). Buttons, die der Server mit 403 ablehnt, sollen für MEMBER und VIEWER ausgeblendet oder mit Begründung deaktiviert werden. Klare Akzeptanzkriterien, typisches Lane-Terrain.</p></div>
-    <div class="card"><h3>H: Reservierte Benutzernamen</h3><p>Backend (Express/Prisma), Security. Die Usernamen der Service-Accounts sollen in einer Konstante stehen und bei der Registrierung gesperrt sein. Die Fallen: Groß- und Kleinschreibung nach dem Normalisieren, Invite-Codes und ein Test, der nur mit Datenbank läuft.</p></div>
+    <div class="card"><div class="big">~826 tok/s</div><p>Prefill on a 16k prompt (measured live)</p></div>
+    <div class="card"><div class="big">54 to 59 tok/s</div><p>Generation with thinking and MTP</p></div>
   </div>
 </section>
 
 <section class="slide">
-  <div class="kicker">Spielregeln</div>
-  <h2>Isolation und faire Bewertung</h2>
+  <div class="kicker">The tasks</div>
+  <h2>Two real open tickets</h2>
   <div class="grid g2">
-    <div class="card"><h3>Isolation</h3><ul><li>Eigener Repo-Klon pro Teilnehmer, ohne Remote</li><li>Gleicher Base-Commit, eigene Abhängigkeiten</li><li>Strikt nacheinander, nie parallel</li></ul></div>
-    <div class="card"><h3>Bewertung</h3><ul><li>Frischer Opus-Reviewer pro Runde, blind über ein Zufalls-Label</li><li>Versteckte Tests, vorab eingefroren; die Pflichtfälle schlagen am Ausgangsstand an</li><li>Bestanden = Reviewer nimmt ab, max. 3 Runden</li></ul></div>
+    <div class="card"><h3>M: Role-dependent controls</h3><p>Frontend (React/Next). Buttons the server rejects with 403 should be hidden for MEMBER and VIEWER, or disabled with a reason. Clear acceptance criteria, typical lane territory.</p></div>
+    <div class="card"><h3>H: Reserved usernames</h3><p>Backend (Express/Prisma), security. The service-account usernames should live in one constant and be blocked at registration. The traps: letter case after normalisation, invite codes, and a test that only runs with a database.</p></div>
   </div>
 </section>
 
 <section class="slide">
-  <div class="kicker">Ergebnis</div>
-  <h2>In welcher Runde bestanden?</h2>
+  <div class="kicker">Rules</div>
+  <h2>Isolation and fair scoring</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Isolation</h3><ul><li>Own repository clone per participant, without a remote</li><li>Same base commit, own dependencies</li><li>Strictly sequential, never in parallel</li></ul></div>
+    <div class="card"><h3>Scoring</h3><ul><li>Fresh Opus reviewer per round, blinded by a random label</li><li>Hidden tests, frozen beforehand; the required cases fail on the base state</li><li>Passed = the reviewer accepts, at most 3 rounds</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Results</div>
+  <h2>In which round did they pass?</h2>
   <table>
-    <tr><th>Aufgabe</th><th>Lane</th><th>Haiku</th><th>Sonnet</th><th>Opus</th><th>Sol 6.1</th><th>Luna 6</th></tr>
-    <tr><td>M: Bedienelemente</td><td class="pass1">Runde 1</td><td class="pass1">Runde 1</td><td class="pass1">Runde 1</td><td class="pass1">Runde 1</td><td class="pass1">Runde 1</td><td class="pass1">Runde 1</td></tr>
-    <tr><td>H: Benutzernamen</td><td class="pass1">Runde 1</td><td class="pass2">Runde 2</td><td class="pass3">Runde 3</td><td class="pass1">Runde 1</td><td class="pass2">Runde 2</td><td class="fail">nicht bestanden</td></tr>
+    <tr><th>Task</th><th>Lane</th><th>Haiku</th><th>Sonnet</th><th>Opus</th><th>Sol 6.1</th><th>Luna 6</th></tr>
+    <tr><td>M: Controls</td><td class="pass1">Round 1</td><td class="pass1">Round 1</td><td class="pass1">Round 1</td><td class="pass1">Round 1</td><td class="pass1">Round 1</td><td class="pass1">Round 1</td></tr>
+    <tr><td>H: Usernames</td><td class="pass1">Round 1</td><td class="pass2">Round 2</td><td class="pass3">Round 3</td><td class="pass1">Round 1</td><td class="pass2">Round 2</td><td class="fail">failed</td></tr>
   </table>
-  <p class="note">Die versteckten Tests waren in jeder Runde für alle grün. Unterschiede zeigten der Review und ein nachgemessener Datenbank-Test.</p>
+  <p class="note">The hidden tests were green for everyone in every round. Differences showed up in the review and in a database test measured afterwards.</p>
 </section>
 
 <section class="slide">
-  <div class="kicker">Zeit</div>
-  <h2>Implementierungszeit in Runde 1 (Sekunden)</h2>
+  <div class="kicker">Time</div>
+  <h2>Implementation time in round 1 (seconds)</h2>
   <div class="grid g2">
     <div class="card"><h3>M</h3><div class="bars">
       <span>Lane</span><div class="bar" style="width:100%;background:var(--lane)"></div><span class="num">353</span>
@@ -167,61 +168,61 @@ th { color: var(--muted); font-weight: 600; font-size: 14px; text-transform: upp
       <span>Luna 6</span><div class="bar" style="width:11%;background:var(--luna)"></div><span class="num">55</span>
     </div></div>
   </div>
-  <p class="note">In Runde 1 ist die Lane 3,9- bis 11-mal langsamer; bis zur Abnahme von H nur 1,3- bis 3,9-mal, weil andere Fix-Runden brauchten. Jeder Schritt der Agent-Schleife kostet Prefill plus Thinking.</p>
+  <p class="note">In round 1 the lane is 3.9 to 11 times slower; until acceptance on H only 1.3 to 3.9 times, because others needed fix rounds. Every step of the agent loop costs prefill plus thinking.</p>
 </section>
 
 <section class="slide">
-  <div class="kicker">Kosten</div>
-  <h2>Der Review dominiert die Kosten, nicht der Code</h2>
+  <div class="kicker">Cost</div>
+  <h2>The review dominates cost, not the code</h2>
   <div class="grid g4">
-    <div class="card"><div class="big">~$0</div><p>Implementierung lokal (Strom nicht gemessen)</p></div>
-    <div class="card"><div class="big">$0.01 bis $0.39</div><p>Implementierung mit Claude pro Modell und Aufgabe; GPT zum API-Listenpreis $0.007 bis $0.28</p></div>
-    <div class="card"><div class="big">$0.22 bis $0.90</div><p>pro blindem Opus-Review (mittel $0.22 bis $0.35, schwer $0.53 bis $0.90)</p></div>
-    <div class="card"><div class="big">$10.37</div><p>API-Kosten der gewerteten Runden, davon $9.15 Reviews; Codex über das ChatGPT-Abo</p></div>
+    <div class="card"><div class="big">~$0</div><p>Local implementation (electricity not measured)</p></div>
+    <div class="card"><div class="big">$0.01 to $0.39</div><p>Implementation with Claude per model and task; GPT at API list price $0.007 to $0.28</p></div>
+    <div class="card"><div class="big">$0.22 to $0.90</div><p>per blind Opus review (medium $0.22 to $0.35, hard $0.53 to $0.90)</p></div>
+    <div class="card"><div class="big">$10.37</div><p>API cost of the scored rounds, of which $9.15 reviews; Codex via a ChatGPT subscription</p></div>
   </div>
-  <p class="note">Jede zusätzliche Runde kostet einen weiteren Review. Weniger Runden sind der größte Kostenhebel.</p>
+  <p class="note">Every additional round costs another review. Fewer rounds are the biggest cost lever.</p>
 </section>
 
 <section class="slide">
   <div class="kicker">Effort</div>
-  <h2>Effort war nicht gleich verteilt</h2>
+  <h2>Effort was not evenly distributed</h2>
   <div class="grid g3">
-    <div class="card"><h3>Claude: medium</h3><p><code>--bare</code> ignoriert die User-Settings (xhigh). Gesendet wurde der Default <code>effort: medium</code>, auch beim Reviewer. Belegt per Request-Mitschnitt.</p></div>
-    <div class="card"><h3>Lane: xhigh</h3><p>opencode sendet ohne Variante keinen Effort, also greift der Default im Chat-Template (<code>xhigh</code>). Thinking ist an, opencode zählt die Reasoning-Tokens aber nicht.</p></div>
-    <div class="card"><h3>Codex: Modell-Default</h3><p>Sol 6.1 auf <code>low</code>, Luna 6 auf <code>medium</code> (laut Modell-Cache, bewusst nicht festgenagelt). Die Reasoning-Tokens passen dazu.</p></div>
+    <div class="card"><h3>Claude: medium</h3><p><code>--bare</code> ignores the user settings (xhigh). The default <code>effort: medium</code> was sent, for the reviewer too. Proven by request capture.</p></div>
+    <div class="card"><h3>Lane: xhigh</h3><p>Without a variant, opencode sends no effort, so the chat-template default applies (<code>xhigh</code>). Thinking is on, but opencode does not count the reasoning tokens.</p></div>
+    <div class="card"><h3>Codex: model default</h3><p>Sol 6.1 at <code>low</code>, Luna 6 at <code>medium</code> (per the model cache, deliberately not pinned). The reasoning tokens match.</p></div>
   </div>
 </section>
 
 <section class="slide">
-  <div class="kicker">Beobachtungen</div>
-  <h2>Was Review und Nachmessung gezeigt haben</h2>
+  <div class="kicker">Observations</div>
+  <h2>What the review and a follow-up measurement showed</h2>
   <div class="grid g3">
-    <div class="card"><h3>Nur die Lane hält einen bestehenden Datenbank-Test grün</h3><p>Ein bestehender Datenbank-Test erwartet 409. Nachgemessen hält ihn nur die Lane grün. Opus, Haiku, Sol und Luna brechen ihn, drei davon hat der Review trotzdem abgenommen. Sonnet schrieb die Erwartung auf Vorschlag des Reviewers auf 400 um.</p></div>
-    <div class="card"><h3>Schnell ist nicht gleich fertig</h3><p>Luna 6 war auf M mit 33 Sekunden knapp hinter Sonnet (32 s) unter den Schnellsten, scheiterte auf H aber nach drei Runden. Die Lane war überall am langsamsten und bestand beide Aufgaben in Runde 1.</p></div>
-    <div class="card"><h3>Doku bestimmte die Review-Runden</h3><p>Die geforderte Sperre setzten alle um. Die Mediums auf H betrafen fast nur Zeilenverweise im Knowledge-Bundle, Changelog und Doku-Aussagen. Luna 6 scheiterte genau daran dreimal.</p></div>
+    <div class="card"><h3>Only the lane keeps an existing database test green</h3><p>An existing database test expects 409. Measured afterwards, only the lane keeps it green. Opus, Haiku, Sol and Luna break it, and the review still accepted three of them. Sonnet changed the expectation to 400 without the approval the reviewer's suggestion required.</p></div>
+    <div class="card"><h3>Fast is not the same as done</h3><p>Luna 6 was among the fastest on M with 33 seconds, just behind Sonnet (32 s), but failed on H after three rounds. The lane was the slowest everywhere and passed both tasks in round 1.</p></div>
+    <div class="card"><h3>Docs drove the review rounds</h3><p>Everyone implemented the required block. The mediums on H were almost all about line references in the repository's knowledge base, the changelog and docs statements. Luna 6 failed on exactly this three times.</p></div>
   </div>
 </section>
 
 <section class="slide">
-  <div class="kicker">Grenzen</div>
-  <h2>Was der Pilot nicht zeigt</h2>
+  <div class="kicker">Limits</div>
+  <h2>What the pilot does not show</h2>
   <div class="grid g2">
-    <div class="card"><ul><li>n = 2 Aufgaben</li><li>Effort ungleich (Lane xhigh, Claude und Luna medium, Sol low)</li><li>Reviewer eine Stufe unter Produktion</li></ul></div>
-    <div class="card"><ul><li>Versteckte Tests zu leicht, alle bestanden</li><li>Ein Review pro Lösung, Rauschen ungemessen</li><li>Review nur teilblind</li><li>Lokale Verifikation ohne Datenbank-Tests</li></ul></div>
+    <div class="card"><ul><li>n = 2 tasks</li><li>Uneven effort (lane xhigh, Claude and Luna medium, Sol low)</li><li>Reviewer one tier below production</li></ul></div>
+    <div class="card"><ul><li>Hidden tests too easy, everyone passed</li><li>One review per solution, noise unmeasured</li><li>Review only partially blind</li><li>Local verification without database tests</li></ul></div>
   </div>
 </section>
 
 <section class="slide">
-  <div class="kicker">Fazit</div>
-  <h2>Langsamer, in diesem Pilot nicht schlechter</h2>
+  <div class="kicker">Conclusion</div>
+  <h2>Slower, but in this pilot not worse</h2>
   <div class="grid g2">
-    <div class="card"><h3>Heute</h3><p>Die Regel "Lane = mittlerer Implementer" ist gestützt. Für eine Lockerung bei sicherheitskritischen Aufgaben reicht ein gutes Ergebnis nicht.</p></div>
-    <div class="card"><h3>Nächster Lauf</h3><ul><li>Mehr Aufgaben</li><li>Effort für alle festnageln, Reviewer auf high</li><li>Zwei Reviews pro Diff, schärfere versteckte Tests</li></ul></div>
+    <div class="card"><h3>Today</h3><p>The rule "lane = mid-tier implementer" is supported. One good result is not enough to relax it for security-critical tasks.</p></div>
+    <div class="card"><h3>Next run</h3><ul><li>More tasks</li><li>Pin the effort for everyone, reviewer at high</li><li>Two reviews per diff, sharper hidden tests</li></ul></div>
   </div>
 </section>
 
 </div>
-<div class="nav"><button id="prev" aria-label="Vorherige Folie">←</button><span id="pos"></span><button id="next" aria-label="Nächste Folie">→</button></div>
+<div class="nav"><button id="prev" aria-label="Previous slide">←</button><span id="pos"></span><button id="next" aria-label="Next slide">→</button><a href="de.html" hreflang="de" lang="de">DE</a></div>
 <script>
 (function () {
   var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
@@ -238,6 +239,9 @@ th { color: var(--muted); font-weight: 600; font-size: 14px; text-transform: upp
   document.addEventListener('keydown', function (e) {
     if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(i + 1); }
     if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(i - 1); }
+  });
+  document.querySelectorAll('.nav a[hreflang]').forEach(function (a) {
+    a.addEventListener('click', function () { a.setAttribute('href', a.getAttribute('href').split('#')[0] + '#' + (i + 1)); });
   });
   show(i);
 })();
