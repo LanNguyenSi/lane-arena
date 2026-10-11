@@ -4,10 +4,11 @@
 // Markdown). Every edition report (runs/<edition>/README.md and README.de.md) is
 // rendered to report.html and report.de.html next to the slides. Relative links in
 // the reports are rewritten to their site targets, and the build fails when any local
-// href or src in the finished site points at a file that does not exist.
+// href, src or srcset in the finished site points at a file that does not exist or lies
+// outside _site. Fragments (#...) are not validated.
 
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join, posix, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Marked } from 'marked';
 
@@ -135,10 +136,27 @@ function checkLinks() {
   const broken = [];
   for (const file of walk(out).filter((f) => f.endsWith('.html'))) {
     const html = readFileSync(file, 'utf8');
-    for (const m of html.matchAll(/\s(?:href|src)="([^"]*)"/g)) {
-      const href = m[1].replace(/&amp;/g, '&');
+    const refs = [];
+    for (const m of html.matchAll(/\s(href|src|srcset)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi)) {
+      const value = (m[2] ?? m[3]).replace(/&amp;/g, '&');
+      if (m[1].toLowerCase() === 'srcset') refs.push(...value.split(',').map((c) => c.trim().split(/\s+/)[0]));
+      else refs.push(value);
+    }
+    for (const href of refs) {
       if (!isLocal(href)) continue;
-      let target = resolve(dirname(file), decodeURIComponent(splitHref(href).path) || '.');
+      let path;
+      try {
+        path = decodeURIComponent(splitHref(href).path);
+      } catch {
+        broken.push(`${relative(out, file)}: ${href} (malformed escape)`);
+        continue;
+      }
+      let target = resolve(dirname(file), path || '.');
+      const rel = relative(out, target);
+      if (rel.startsWith('..') || isAbsolute(rel)) {
+        broken.push(`${relative(out, file)}: ${href} (outside _site)`);
+        continue;
+      }
       if (existsSync(target) && statSync(target).isDirectory()) target = join(target, 'index.html');
       if (!existsSync(target)) broken.push(`${relative(out, file)}: ${href}`);
     }
