@@ -45,7 +45,7 @@ export function rewriteHref(href, fromDir) {
 
 // Numeric character references and the common named ones. Named references are
 // case sensitive in HTML, so the lookup is exact; unknown ones stay as written.
-const NAMED = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+const NAMED = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: '\u00a0' };
 
 export function decodeEntities(s) {
   return s.replace(/&(#[xX][0-9a-fA-F]+|#[0-9]+|[A-Za-z]+);/g, (whole, ref) => {

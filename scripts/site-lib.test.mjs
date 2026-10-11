@@ -55,6 +55,7 @@ test('decodeEntities decodes numeric and common named references, leaves unknown
   assert.equal(decodeEntities('a&#x2E;html'), 'a.html');
   assert.equal(decodeEntities('a&amp;b &quot;c&quot; &lt;&gt; &apos;'), 'a&b "c" <> \'');
   assert.equal(decodeEntities('&unknown; &AMP;'), '&unknown; &AMP;');
+  assert.equal(decodeEntities('a&nbsp;b'), 'a\u00a0b');
 });
 
 test('extractRefs reads double-quoted, single-quoted and unquoted values', () => {
