@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lane-Arena</title>
+<style>
+:root {
+  --bg: #f7f6f2; --fg: #1d1d1b; --muted: #6b6a64; --card: #ffffff; --line: #e2e0d8;
+  --accent: #b4532a; --lane: #2f6f5e; --haiku: #8a6bbf; --sonnet: #c7862f; --opus: #3f5fa8; --sol: #b0457a; --luna: #4a8fa3;
+  --ok: #2f7d4f; --warn: #b4532a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161614; --fg: #ecebe6; --muted: #a09f98; --card: #201f1c; --line: #34332e;
+    --accent: #e08a5f; --lane: #5fb39b; --haiku: #b39be0; --sonnet: #e2ad5e; --opus: #7f9be0; --sol: #e07fb0; --luna: #7cc3d6;
+    --ok: #6cc28f; --warn: #e08a5f;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161614; --fg: #ecebe6; --muted: #a09f98; --card: #201f1c; --line: #34332e;
+  --accent: #e08a5f; --lane: #5fb39b; --haiku: #b39be0; --sonnet: #e2ad5e; --opus: #7f9be0; --sol: #e07fb0; --luna: #7cc3d6;
+  --ok: #6cc28f; --warn: #e08a5f;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--fg); font: 18px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
+.deck { height: 100%; }
+.slide { display: none; height: 100%; padding: 56px 72px 72px; max-width: 1200px; margin: 0 auto; flex-direction: column; justify-content: center; gap: 20px; }
+.slide.active { display: flex; }
+h1 { font-size: 52px; line-height: 1.1; margin: 0; letter-spacing: -0.02em; }
+h2 { font-size: 34px; margin: 0 0 8px; letter-spacing: -0.01em; }
+.kicker { color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; font-size: 14px; }
+.sub { color: var(--muted); font-size: 22px; max-width: 46ch; }
+.grid { display: grid; gap: 16px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+.card h3 { margin: 0 0 6px; font-size: 18px; }
+.card p, .card li { color: var(--muted); margin: 0; font-size: 16px; }
+.card ul { margin: 0; padding-left: 18px; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+table { border-collapse: collapse; width: 100%; font-size: 17px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; }
+.pass1 { color: var(--ok); font-weight: 600; }
+.pass2 { color: var(--sonnet); font-weight: 600; }
+.pass3 { color: var(--warn); font-weight: 600; }
+.fail { color: var(--warn); font-weight: 700; text-decoration: underline; text-decoration-style: wavy; }
+.bars { display: grid; grid-template-columns: 110px 1fr 70px; gap: 8px 12px; align-items: center; font-size: 15px; }
+.bar { height: 18px; border-radius: 4px; }
+.num { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.big { font-size: 44px; font-weight: 700; letter-spacing: -0.02em; }
+.note { color: var(--muted); font-size: 14px; }
+.nav { position: fixed; bottom: 16px; left: 0; right: 0; display: flex; justify-content: center; gap: 12px; align-items: center; color: var(--muted); font-size: 14px; }
+.nav button { background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; font: inherit; cursor: pointer; }
+@page { size: 1280px 720px; margin: 0; }
+@media print {
+  html, body { height: auto; overflow: visible; background: var(--bg); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .nav { display: none; }
+  .slide { display: flex !important; width: 1280px; height: 720px; max-width: none; padding: 48px 72px; break-after: page; page-break-after: always; overflow: hidden; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+}
+@media screen and (max-width: 760px) {
+  body { font-size: 16px; overflow: auto; }
+  .slide { padding: 28px 16px 80px; justify-content: flex-start; }
+  h1 { font-size: 34px; } h2 { font-size: 26px; }
+  .g2, .g3, .g4 { grid-template-columns: 1fr; }
+  table { font-size: 14px; } th, td { padding: 8px 6px; }
+  .bars { grid-template-columns: 80px 1fr 56px; }
+}
+</style>
+</head>
+<body>
+<div class="deck">
+
+<section class="slide active">
+  <div class="kicker">Pilot, 10. und 11. Oktober 2026</div>
+  <h1>Lane-Arena: lokales Modell gegen Claude und GPT</h1>
+  <p class="sub">Zwei echte Tickets, sechs Implementierer, isolierte Klone, blinder Review und versteckte Tests.</p>
+</section>
+
+<section class="slide">
+  <div class="kicker">Die Frage</div>
+  <h2>Hält ein lokales Open-Weight-Modell als Implementierer mit?</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Hintergrund</h3><p>Die lokale Lane übernimmt heute Aufgaben, die sonst der Claude-Implementer mittlerer Stufe bekäme. Sicherheitskritisches und Schweres bleibt bei Claude.</p></div>
+    <div class="card"><h3>Ziel des Piloten</h3><p>Ein wiederholbares Harness bauen und einen ersten Vergleich auf einer mittleren und einer schweren Aufgabe liefern.</p></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Teilnehmer</div>
+  <h2>Sechs Implementierer, gleicher Brief</h2>
+  <div class="grid g3">
+    <div class="card"><h3><span class="dot" style="background:var(--lane)"></span>Lane</h3><p>Qwen3.8-Flash-Next über opencode, lokal auf dem Mac Studio</p></div>
+    <div class="card"><h3><span class="dot" style="background:var(--haiku)"></span>Haiku 5.5</h3><p><code>claude --bare -p</code></p></div>
+    <div class="card"><h3><span class="dot" style="background:var(--sonnet)"></span>Sonnet 5.5</h3><p><code>claude --bare -p</code></p></div>
+    <div class="card"><h3><span class="dot" style="background:var(--opus)"></span>Opus 5.5</h3><p><code>claude --bare -p</code></p></div>
+    <div class="card"><h3><span class="dot" style="background:var(--sol)"></span>GPT-6.1-Sol</h3><p><code>codex exec</code> mit ChatGPT-Konto</p></div>
+    <div class="card"><h3><span class="dot" style="background:var(--luna)"></span>GPT-6-Luna</h3><p><code>codex exec</code> mit ChatGPT-Konto</p></div>
+  </div>
+  <p class="note">Claude: kein MCP, keine Hooks, kein Memory, keine Subagenten. Codex: keine User-Config, keine Regeln, kein MCP, kein Memory. So entspricht der Kontext dem der Lane.</p>
+</section>
+
+<section class="slide">
+  <div class="kicker">Die lokale Lane</div>
+  <h2>Hardware und Durchsatz</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Mac Studio, Apple M5 Max</h3><ul><li>18 CPU- und 40 GPU-Kerne, 128 GB Unified Memory</li><li>llama.cpp (Metal), 262k Kontext, 2 Slots</li><li>MTP für spekulatives Decoding</li></ul></div>
+    <div class="card"><h3>Qwen3.8-Flash-Next</h3><ul><li>MoE mit 125B Parametern, davon 6B aktiv</li><li>4-Bit-GGUF (UD-IQ4_XS), 93,7 GB</li><li>Thinking an, Effort per Default xhigh</li></ul></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><div class="big">~826 tok/s</div><p>Prefill bei einem 16k-Prompt (live gemessen)</p></div>
+    <div class="card"><div class="big">54 bis 59 tok/s</div><p>Generierung mit Thinking und MTP</p></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Die Aufgaben</div>
+  <h2>Zwei echte offene Tickets</h2>
+  <div class="grid g2">
+    <div class="card"><h3>M: Bedienelemente je nach Rolle</h3><p>Frontend (React/Next). Buttons, die der Server mit 403 ablehnt, sollen für MEMBER und VIEWER ausgeblendet oder mit Begründung deaktiviert werden. Klare Akzeptanzkriterien, typisches Lane-Terrain.</p></div>
+    <div class="card"><h3>H: Reservierte Benutzernamen</h3><p>Backend (Express/Prisma), Security. Die Usernamen der Service-Accounts sollen in einer Konstante stehen und bei der Registrierung gesperrt sein. Die Fallen: Groß- und Kleinschreibung nach dem Normalisieren, Invite-Codes und ein Test, der nur mit Datenbank läuft.</p></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Spielregeln</div>
+  <h2>Isolation und faire Bewertung</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Isolation</h3><ul><li>Eigener Repo-Klon pro Teilnehmer, ohne Remote</li><li>Gleicher Base-Commit, eigene Abhängigkeiten</li><li>Strikt nacheinander, nie parallel</li></ul></div>
+    <div class="card"><h3>Bewertung</h3><ul><li>Frischer Opus-Reviewer pro Runde, blind über ein Zufalls-Label</li><li>Versteckte Tests, vorab eingefroren; die Pflichtfälle schlagen am Ausgangsstand an</li><li>Bestanden = Reviewer nimmt ab, max. 3 Runden</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Ergebnis</div>
+  <h2>In welcher Runde bestanden?</h2>
+  <table>
+    <tr><th>Aufgabe</th><th>Lane</th><th>Haiku</th><th>Sonnet</th><th>Opus</th><th>Sol 6.1</th><th>Luna 6</th></tr>
+    <tr><td>M: Bedienelemente</td><td class="pass1">Runde 1</td><td class="pass1">Runde 1</td><td class="pass1">Runde 1</td><td class="pass1">Runde 1</td><td class="pass1">Runde 1</td><td class="pass1">Runde 1</td></tr>
+    <tr><td>H: Benutzernamen</td><td class="pass1">Runde 1</td><td class="pass2">Runde 2</td><td class="pass3">Runde 3</td><td class="pass1">Runde 1</td><td class="pass2">Runde 2</td><td class="fail">nicht bestanden</td></tr>
+  </table>
+  <p class="note">Die versteckten Tests waren in jeder Runde für alle grün. Unterschiede zeigten der Review und ein nachgemessener Datenbank-Test.</p>
+</section>
+
+<section class="slide">
+  <div class="kicker">Zeit</div>
+  <h2>Implementierungszeit in Runde 1 (Sekunden)</h2>
+  <div class="grid g2">
+    <div class="card"><h3>M</h3><div class="bars">
+      <span>Lane</span><div class="bar" style="width:100%;background:var(--lane)"></div><span class="num">353</span>
+      <span>Haiku</span><div class="bar" style="width:16%;background:var(--haiku)"></div><span class="num">57</span>
+      <span>Sonnet</span><div class="bar" style="width:9%;background:var(--sonnet)"></div><span class="num">32</span>
+      <span>Opus</span><div class="bar" style="width:24%;background:var(--opus)"></div><span class="num">83</span>
+      <span>Sol 6.1</span><div class="bar" style="width:21%;background:var(--sol)"></div><span class="num">75</span>
+      <span>Luna 6</span><div class="bar" style="width:9%;background:var(--luna)"></div><span class="num">33</span>
+    </div></div>
+    <div class="card"><h3>H</h3><div class="bars">
+      <span>Lane</span><div class="bar" style="width:100%;background:var(--lane)"></div><span class="num">491</span>
+      <span>Haiku</span><div class="bar" style="width:22%;background:var(--haiku)"></div><span class="num">108</span>
+      <span>Sonnet</span><div class="bar" style="width:12%;background:var(--sonnet)"></div><span class="num">58</span>
+      <span>Opus</span><div class="bar" style="width:26%;background:var(--opus)"></div><span class="num">126</span>
+      <span>Sol 6.1</span><div class="bar" style="width:16%;background:var(--sol)"></div><span class="num">79</span>
+      <span>Luna 6</span><div class="bar" style="width:11%;background:var(--luna)"></div><span class="num">55</span>
+    </div></div>
+  </div>
+  <p class="note">In Runde 1 ist die Lane 3,9- bis 11-mal langsamer; bis zur Abnahme von H nur 1,3- bis 3,9-mal, weil andere Fix-Runden brauchten. Jeder Schritt der Agent-Schleife kostet Prefill plus Thinking.</p>
+</section>
+
+<section class="slide">
+  <div class="kicker">Kosten</div>
+  <h2>Der Review dominiert die Kosten, nicht der Code</h2>
+  <div class="grid g4">
+    <div class="card"><div class="big">~$0</div><p>Implementierung lokal (Strom nicht gemessen)</p></div>
+    <div class="card"><div class="big">$0.01 bis $0.39</div><p>Implementierung mit Claude pro Modell und Aufgabe; GPT zum API-Listenpreis $0.007 bis $0.28</p></div>
+    <div class="card"><div class="big">$0.22 bis $0.90</div><p>pro blindem Opus-Review (mittel $0.22 bis $0.35, schwer $0.53 bis $0.90)</p></div>
+    <div class="card"><div class="big">$10.37</div><p>API-Kosten der gewerteten Runden, davon $9.15 Reviews; Codex über das ChatGPT-Abo</p></div>
+  </div>
+  <p class="note">Jede zusätzliche Runde kostet einen weiteren Review. Weniger Runden sind der größte Kostenhebel.</p>
+</section>
+
+<section class="slide">
+  <div class="kicker">Effort</div>
+  <h2>Effort war nicht gleich verteilt</h2>
+  <div class="grid g3">
+    <div class="card"><h3>Claude: medium</h3><p><code>--bare</code> ignoriert die User-Settings (xhigh). Gesendet wurde der Default <code>effort: medium</code>, auch beim Reviewer. Belegt per Request-Mitschnitt.</p></div>
+    <div class="card"><h3>Lane: xhigh</h3><p>opencode sendet ohne Variante keinen Effort, also greift der Default im Chat-Template (<code>xhigh</code>). Thinking ist an, opencode zählt die Reasoning-Tokens aber nicht.</p></div>
+    <div class="card"><h3>Codex: Modell-Default</h3><p>Sol 6.1 auf <code>low</code>, Luna 6 auf <code>medium</code> (laut Modell-Cache, bewusst nicht festgenagelt). Die Reasoning-Tokens passen dazu.</p></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Beobachtungen</div>
+  <h2>Was Review und Nachmessung gezeigt haben</h2>
+  <div class="grid g3">
+    <div class="card"><h3>Nur die Lane hält einen bestehenden Datenbank-Test grün</h3><p>Ein bestehender Datenbank-Test erwartet 409. Nachgemessen hält ihn nur die Lane grün. Opus, Haiku, Sol und Luna brechen ihn, drei davon hat der Review trotzdem abgenommen. Sonnet schrieb die Erwartung auf Vorschlag des Reviewers auf 400 um.</p></div>
+    <div class="card"><h3>Schnell ist nicht gleich fertig</h3><p>Luna 6 war auf M mit 33 Sekunden knapp hinter Sonnet (32 s) unter den Schnellsten, scheiterte auf H aber nach drei Runden. Die Lane war überall am langsamsten und bestand beide Aufgaben in Runde 1.</p></div>
+    <div class="card"><h3>Doku bestimmte die Review-Runden</h3><p>Die geforderte Sperre setzten alle um. Die Mediums auf H betrafen fast nur Zeilenverweise im Knowledge-Bundle, Changelog und Doku-Aussagen. Luna 6 scheiterte genau daran dreimal.</p></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Grenzen</div>
+  <h2>Was der Pilot nicht zeigt</h2>
+  <div class="grid g2">
+    <div class="card"><ul><li>n = 2 Aufgaben</li><li>Effort ungleich (Lane xhigh, Claude und Luna medium, Sol low)</li><li>Reviewer eine Stufe unter Produktion</li></ul></div>
+    <div class="card"><ul><li>Versteckte Tests zu leicht, alle bestanden</li><li>Ein Review pro Lösung, Rauschen ungemessen</li><li>Review nur teilblind</li><li>Lokale Verifikation ohne Datenbank-Tests</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Fazit</div>
+  <h2>Langsamer, in diesem Pilot nicht schlechter</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Heute</h3><p>Die Regel "Lane = mittlerer Implementer" ist gestützt. Für eine Lockerung bei sicherheitskritischen Aufgaben reicht ein gutes Ergebnis nicht.</p></div>
+    <div class="card"><h3>Nächster Lauf</h3><ul><li>Mehr Aufgaben</li><li>Effort für alle festnageln, Reviewer auf high</li><li>Zwei Reviews pro Diff, schärfere versteckte Tests</li></ul></div>
+  </div>
+</section>
+
+</div>
+<div class="nav"><button id="prev" aria-label="Vorherige Folie">←</button><span id="pos"></span><button id="next" aria-label="Nächste Folie">→</button></div>
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var i = 0;
+  try { var h = parseInt(location.hash.slice(1), 10); if (h > 0 && h <= slides.length) i = h - 1; } catch (e) {}
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, k) { s.classList.toggle('active', k === i); });
+    document.getElementById('pos').textContent = (i + 1) + ' / ' + slides.length;
+    try { history.replaceState(null, '', '#' + (i + 1)); } catch (e) {}
+  }
+  document.getElementById('prev').onclick = function () { show(i - 1); };
+  document.getElementById('next').onclick = function () { show(i + 1); };
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(i + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(i - 1); }
+  });
+  show(i);
+})();
+</script>
+</body>
+</html>
