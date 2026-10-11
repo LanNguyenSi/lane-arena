@@ -40,10 +40,14 @@ runs/<yyyy-mm>-<name>/
 A new edition gets its own folder under `runs/`, a row in the tables of `README.md` and
 `README.de.md`, and a card in `index.html`.
 
+The repository holds only the reports and slides. The briefs, hidden tests, run logs and
+the harness that ran an edition are not published here.
+
 The Pages site is built on every push to `main` (`.github/workflows/pages.yml`, locally
 `npm ci && npm run build` into `_site/`). The build renders each edition's `README.md` and
 `README.de.md` to `report.html` and `report.de.html`, rewrites relative report links to
-their site targets and fails on any local link that points nowhere. The reports stay
+their site targets and fails when a local link on the site points at a file that does not
+exist or lies outside the site. Anchors after `#` are not checked. The reports stay
 Markdown; the HTML is never committed.
 
 ## License
