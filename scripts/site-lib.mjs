@@ -90,9 +90,12 @@ export function parseSrcset(value) {
   return urls;
 }
 
-// A start tag: a name, then an interior of quoted values or characters other than
-// quotes and '>' (so a '>' inside a quoted value does not end the tag).
-const TAG = /<[A-Za-z][^\s/>]*((?:"[^"]*"|'[^']*'|[^"'>])*)>/g;
+// A start tag: a name, then an interior that begins with whitespace or '/' and holds
+// quoted values or characters other than quotes, '<' and '>' (so a '>' inside a
+// quoted value does not end the tag). Name and interior cannot match the same
+// characters and an unquoted '<' ends a failed start, so the scan stays linear on
+// unterminated input.
+const TAG = /<[A-Za-z][^\s/<>"']*((?:[\s/](?:"[^"]*"|'[^']*'|[^"'<>])*)?)>/g;
 // One attribute inside a tag interior: its name and an optional double-quoted,
 // single-quoted or unquoted value. Quoted values are consumed whole, so text inside
 // them is never read as another attribute.

@@ -173,3 +173,25 @@ test('checkLinks: attribute-like prose is ignored, a missing target in a real ta
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('extractRefs: an unbalanced quote does not hide the next tag', () => {
+  assert.deepEqual(extractRefs('<a title="oops>x</a> <a href="b.html">y</a>'), ['b.html']);
+});
+
+test('extractRefs: tag-like text inside a comment is still checked (conservative)', () => {
+  assert.deepEqual(extractRefs('<!-- <a href="c.html"> -->'), ['c.html']);
+});
+
+test('extractRefs: self-closing and slash-separated tags', () => {
+  assert.deepEqual(extractRefs('<br/><img/src="s.png"><a href="x.html"/>'), ['s.png', 'x.html']);
+});
+
+test('extractRefs stays fast on unterminated tag starts', () => {
+  const inputs = ['<a "'.repeat(100000), '<a' + 'b'.repeat(100000), '<a'.repeat(100000), "<a '".repeat(100000)];
+  for (const input of inputs) {
+    const start = process.hrtime.bigint();
+    extractRefs(input);
+    const ms = Number(process.hrtime.bigint() - start) / 1e6;
+    assert.ok(ms < 2000, `took ${ms} ms on ${input.slice(0, 8)}...`);
+  }
+});
