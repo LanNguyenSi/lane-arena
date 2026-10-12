@@ -132,3 +132,66 @@ test('checkLinks: a link outside the site fails', () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('parseSrcset keeps commas inside parenthesised descriptors', () => {
+  assert.deepEqual(parseSrcset('a.png 1x (foo, bar), b.png 2x'), ['a.png', 'b.png']);
+  assert.deepEqual(parseSrcset('a.png (x,y),b.png'), ['a.png', 'b.png']);
+  assert.deepEqual(parseSrcset('a.png (x, b.png 2x'), ['a.png']);
+});
+
+test('extractRefs reads attributes only inside tags', () => {
+  const html = '<p>set href=foo.html or src="x.png" in text</p><a title="see href=t.html" href="a.html">x</a>';
+  assert.deepEqual(extractRefs(html), ['a.html']);
+});
+
+test('extractRefs: attribute names match exactly and case-insensitively, > inside quotes does not end a tag', () => {
+  assert.deepEqual(extractRefs('<img data-src="nope.png" src="a.png"><A HREF="B.html">x</A>'), ['a.png', 'B.html']);
+  assert.deepEqual(extractRefs('<a title="a > b" href="after.html">x</a>'), ['after.html']);
+});
+
+test('checkLinks: parenthesised srcset descriptor passes, a missing candidate still fails', () => {
+  const dir = site({
+    'img/b.png': 'x',
+    'ok.html': '<img srcset="img/b.png 1x (a, b), img/b.png 2x">',
+    'bad.html': '<img srcset="img/b.png 1x (a, b), img/missing.png 2x">',
+  });
+  try {
+    assert.deepEqual(checkLinks(dir), ['bad.html: img/missing.png']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('checkLinks: attribute-like prose is ignored, a missing target in a real tag still fails', () => {
+  const dir = site({
+    'ok.html': '<p>write href=gone.html in prose</p>',
+    'bad.html': '<p>x</p><a href=gone.html>y</a>',
+  });
+  try {
+    assert.deepEqual(checkLinks(dir), ['bad.html: gone.html']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('extractRefs: an unbalanced quote does not hide the next tag', () => {
+  assert.deepEqual(extractRefs('<a title="oops>x</a> <a href="b.html">y</a>'), ['b.html']);
+});
+
+test('extractRefs: tag-like text inside a comment is still checked (conservative)', () => {
+  assert.deepEqual(extractRefs('<!-- <a href="c.html"> -->'), ['c.html']);
+});
+
+test('extractRefs: self-closing and slash-separated tags', () => {
+  assert.deepEqual(extractRefs('<br/><img/src="s.png"><a href="x.html"/>'), ['s.png', 'x.html']);
+});
+
+test('extractRefs stays fast on unterminated tag starts', () => {
+  const inputs = ['<a "'.repeat(100000), '<a' + 'b'.repeat(100000), '<a'.repeat(100000), "<a '".repeat(100000)];
+  for (const input of inputs) {
+    const start = process.hrtime.bigint();
+    extractRefs(input);
+    const ms = Number(process.hrtime.bigint() - start) / 1e6;
+    assert.ok(ms < 2000, `took ${ms} ms on ${input.slice(0, 8)}...`);
+  }
+});

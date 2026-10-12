@@ -61,7 +61,8 @@ export function decodeEntities(s) {
 
 // srcset per the HTML rule: each candidate's URL runs up to whitespace (so a data:
 // URI with commas stays whole); a URL ending in commas ends the candidate, otherwise
-// its descriptors run up to the next comma.
+// its descriptors run up to the next comma outside parentheses (a comma inside
+// "(...)" belongs to the descriptor, an unclosed "(" runs to the end).
 export function parseSrcset(value) {
   const urls = [];
   const n = value.length;
@@ -73,20 +74,48 @@ export function parseSrcset(value) {
     while (i < n && !/\s/.test(value[i])) i++;
     let url = value.slice(start, i);
     if (url.endsWith(',')) url = url.replace(/,+$/, '');
-    else while (i < n && value[i] !== ',') i++;
+    else {
+      let inParens = false;
+      while (i < n) {
+        const c = value[i];
+        if (inParens) {
+          if (c === ')') inParens = false;
+        } else if (c === '(') inParens = true;
+        else if (c === ',') break;
+        i++;
+      }
+    }
     if (url) urls.push(url);
   }
   return urls;
 }
 
-// Every href, src and srcset value in an HTML string (double-quoted, single-quoted
-// or unquoted), entity-decoded, with srcset split into candidate URLs.
+// A start tag: a name, then an interior that begins with whitespace or '/' and holds
+// quoted values or characters other than quotes, '<' and '>' (so a '>' inside a
+// quoted value does not end the tag). Name and interior cannot match the same
+// characters and an unquoted '<' ends a failed start, so the scan stays linear on
+// unterminated input.
+const TAG = /<[A-Za-z][^\s/<>"']*((?:[\s/](?:"[^"]*"|'[^']*'|[^"'<>])*)?)>/g;
+// One attribute inside a tag interior: its name and an optional double-quoted,
+// single-quoted or unquoted value. Quoted values are consumed whole, so text inside
+// them is never read as another attribute.
+const ATTR = /([^\s"'>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
+
+// Every href, src and srcset value inside the start tags of an HTML string
+// (double-quoted, single-quoted or unquoted), entity-decoded, with srcset split
+// into candidate URLs. Attribute-like text outside a tag interior is ignored.
 export function extractRefs(html) {
   const refs = [];
-  for (const m of html.matchAll(/\s(href|src|srcset)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi)) {
-    const value = decodeEntities(m[2] ?? m[3] ?? m[4]);
-    if (m[1].toLowerCase() === 'srcset') refs.push(...parseSrcset(value));
-    else refs.push(value);
+  for (const tag of html.matchAll(TAG)) {
+    for (const m of tag[1].matchAll(ATTR)) {
+      const name = m[1].toLowerCase();
+      if (name !== 'href' && name !== 'src' && name !== 'srcset') continue;
+      const raw = m[2] ?? m[3] ?? m[4];
+      if (raw === undefined) continue;
+      const value = decodeEntities(raw);
+      if (name === 'srcset') refs.push(...parseSrcset(value));
+      else refs.push(value);
+    }
   }
   return refs;
 }
