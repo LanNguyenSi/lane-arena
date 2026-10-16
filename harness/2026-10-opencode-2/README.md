@@ -20,7 +20,7 @@ the replay of one real ticket.
 |---|---|
 | Is opencode 2 a drop-in replacement? | **No.** Four defaults change silently and would have removed the lane's sandbox boundary or altered its context (section 3). |
 | Does opencode 2 fix the silent abort after a denied permission? | **Yes.** The model is told about the denial and finishes with a report. The exit code is still 0. |
-| Is it faster? | On toy tasks 1.2 to 5.8 times faster. On the real ticket **1.75 times slower**. |
+| Is it faster? | On toy tasks 1.2 to 5.8 times faster. On the real ticket **1.75 times slower**. 1.19 solved the replayed ticket in about the same time as in production (596 s vs. 605 s), so the gap to v2 is far larger than the spread between the two 1.19 runs. |
 | Why the difference? | The toy-task gain is a fixed saving on the first prompt of a session (about 15 s). Per step both versions are equally fast; on the real ticket the model simply took 95 steps instead of 55. |
 | Better results? | Somewhat more thorough on the real ticket, with the same blind spot as 1.19. One run per version: a direction, not a finding. |
 | Decision | Stay on 1.19 for now. Re-test once 2.x is the regular npm release. |
@@ -52,8 +52,10 @@ fresh copy of a tiny git repository with a sibling folder `outside/` next to it.
 
 ### Real ticket
 
-One ticket that the lane had already delivered in production on 1.19, replayed with the
-**verbatim original brief** on the same base commit, one fresh clone per arm, one run each.
+The real ticket is a **replay**: a ticket that the lane had already solved in production on
+1.19.0 (first implementation round 605 s), run again with the **verbatim original brief** on
+the same base commit, one fresh clone per arm, one run each. The production run gives a third
+data point for 1.19 next to the replay.
 The ticket (backend Hono/Prisma, frontend Next.js, docs): a dashboard summary should mark a
 connected service whose stored credential can no longer be decrypted as "unreadable",
 instead of failing as a whole or showing "Not configured". The brief demanded new tests,
@@ -119,6 +121,7 @@ in runs.
 | | v1 1.19.0 | v2 2.0.25 |
 |---|---|---|
 | Wall time | 596 s | 1,040 s |
+| Wall time of the original production run (1.19.0) | 605 s | |
 | Harness overhead | 1.1 s | 3.1 s |
 | Steps | 55 | 95 |
 | **Seconds per step** | **10.8** | **10.9** |
@@ -128,6 +131,11 @@ in runs.
 | Uncached input | 50k | 65k |
 | Largest context of one step | 76k | 116k |
 | Report at the end | yes | yes |
+
+The 1.19 replay came within 2 % of the original production run (596 s vs. 605 s), so on
+1.19 the time for this ticket reproduces; v2's 1,040 s lies well outside that. Only the wall
+time of the production run is compared here; it ran in a regular worktree, where 1.19 loads
+no extra AGENTS.md either.
 
 Per step the two versions are equally fast, and inside one long session both use the prompt
 cache well. v2 was slower because the model did more under v2, not because the harness is
@@ -177,7 +185,8 @@ from chance.
 
 - **One run per version on the real ticket**, and not alternating: v2 ran first, then v1
   (a loop bug in the benchmark script ran only v2 on the first invocation; the data was
-  relabelled, nothing was lost).
+  relabelled, nothing was lost). With the production run, 1.19 has two time measurements for
+  this ticket, v2 only one.
 - The micro scenarios repeat identical prompts, which favours prompt caching. A busy server
   or changing briefs were not measured.
 - The cause of v1's cache misses on the first prompt is a hypothesis (a per-run value placed

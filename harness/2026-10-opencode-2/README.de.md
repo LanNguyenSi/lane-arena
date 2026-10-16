@@ -20,7 +20,7 @@ auf Spielaufgaben und die Wiederholung eines echten Tickets.
 |---|---|
 | Ist opencode 2 ein direkter Ersatz? | **Nein.** Vier Voreinstellungen ändern sich still und hätten die Sandbox-Grenze der Lane aufgehoben oder ihren Kontext verändert (Abschnitt 3). |
 | Behebt opencode 2 den stillen Abbruch nach einer abgelehnten Rückfrage? | **Ja.** Das Modell erfährt von der Ablehnung und endet mit einem Bericht. Der Exit-Code bleibt 0. |
-| Ist es schneller? | Auf Spielaufgaben 1,2- bis 5,8-mal schneller. Auf dem echten Ticket **1,75-mal langsamer**. |
+| Ist es schneller? | Auf Spielaufgaben 1,2- bis 5,8-mal schneller. Auf dem echten Ticket **1,75-mal langsamer**. 1.19 löste das wiederholte Ticket in etwa derselben Zeit wie im Produktivbetrieb (596 s gegen 605 s), der Abstand zu v2 ist also weit größer als die Streuung zwischen den beiden 1.19-Läufen. |
 | Woher der Unterschied? | Der Vorteil auf Spielaufgaben ist eine feste Ersparnis beim ersten Prompt einer Session (etwa 15 s). Pro Schritt sind beide Versionen gleich schnell; auf dem echten Ticket brauchte das Modell schlicht 95 statt 55 Schritte. |
 | Bessere Ergebnisse? | Auf dem echten Ticket etwas gründlicher, mit demselben blinden Fleck wie 1.19. Ein Lauf pro Version: eine Richtung, kein Befund. |
 | Entscheidung | Vorerst bei 1.19 bleiben. Neu testen, sobald 2.x das reguläre npm-Release ist. |
@@ -52,9 +52,10 @@ einer frischen Kopie eines winzigen Git-Repositorys mit einem Nachbarordner `out
 
 ### Echtes Ticket
 
-Ein Ticket, das die Lane bereits produktiv auf 1.19 geliefert hatte, wiederholt mit dem
+Das echte Ticket ist eine **Wiederholung**: ein Ticket, das die Lane bereits produktiv auf
+1.19.0 gelöst hatte (erste Implementierungsrunde 605 s), erneut ausgeführt mit dem
 **wörtlichen Original-Brief** auf demselben Basis-Commit, ein frischer Klon pro Arm, je ein
-Lauf. Das Ticket (Backend Hono/Prisma, Frontend Next.js, Doku): Eine Dashboard-Übersicht soll
+Lauf. Der Produktivlauf liefert neben der Wiederholung einen dritten Datenpunkt für 1.19. Das Ticket (Backend Hono/Prisma, Frontend Next.js, Doku): Eine Dashboard-Übersicht soll
 einen angebundenen Dienst, dessen gespeicherte Zugangsdaten sich nicht mehr entschlüsseln
 lassen, als "unlesbar" markieren, statt als Ganzes zu scheitern oder "Nicht konfiguriert"
 anzuzeigen. Der Brief verlangte neue Tests, Doku-Pflege und eine Mutationsprobe für jeden
@@ -122,6 +123,7 @@ beobachtet.
 | | v1 1.19.0 | v2 2.0.25 |
 |---|---|---|
 | Wandzeit | 596 s | 1.040 s |
+| Wandzeit des ursprünglichen Produktivlaufs (1.19.0) | 605 s | |
 | Harness-Overhead | 1,1 s | 3,1 s |
 | Schritte | 55 | 95 |
 | **Sekunden pro Schritt** | **10,8** | **10,9** |
@@ -131,6 +133,11 @@ beobachtet.
 | ungecachter Input | 50k | 65k |
 | größter Kontext eines Schritts | 76k | 116k |
 | Bericht am Ende | ja | ja |
+
+Die Wiederholung auf 1.19 lag innerhalb von 2 % des ursprünglichen Produktivlaufs (596 s
+gegen 605 s); auf 1.19 reproduziert sich die Zeit für dieses Ticket also, die 1.040 s von v2
+liegen deutlich außerhalb. Verglichen wird hier nur die Wandzeit des Produktivlaufs; er lief
+in einem regulären Worktree, in dem auch 1.19 keine zusätzliche AGENTS.md lädt.
 
 Pro Schritt sind beide Versionen gleich schnell, und innerhalb einer langen Session nutzen
 beide den Prompt-Cache gut. v2 war langsamer, weil das Modell unter v2 mehr getan hat, nicht
@@ -183,7 +190,8 @@ nicht von Zufall trennen.
 
 - **Ein Lauf pro Version auf dem echten Ticket**, und nicht im Wechsel: v2 lief zuerst, dann
   v1 (ein Schleifenfehler im Benchmark-Skript ließ beim ersten Aufruf nur v2 laufen; die Daten
-  wurden umbenannt, nichts ging verloren).
+  wurden umbenannt, nichts ging verloren). Mit dem Produktivlauf hat 1.19 zwei Zeitmessungen
+  für dieses Ticket, v2 nur eine.
 - Die Mikro-Szenarien wiederholen identische Prompts, das begünstigt den Prompt-Cache. Ein
   ausgelasteter Server oder wechselnde Briefs wurden nicht gemessen.
 - Die Ursache der Cache-Fehlgriffe von v1 beim ersten Prompt ist eine Hypothese (ein pro Lauf
