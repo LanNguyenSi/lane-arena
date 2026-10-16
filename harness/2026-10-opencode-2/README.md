@@ -18,7 +18,7 @@ the replay of one real ticket.
 
 | Question | Answer |
 |---|---|
-| Is opencode 2 a drop-in replacement? | **No.** Four defaults change silently and would have removed the lane's sandbox boundary or altered its context (section 3). |
+| Is opencode 2 a drop-in replacement? | **No.** Five behaviour changes are silent and would have removed the lane's permission boundary or altered its context (section 3). Even with an explicit `ask` rule, shell commands reach outside paths through their arguments. |
 | Does opencode 2 fix the silent abort after a denied permission? | **Yes.** The model is told about the denial and finishes with a report. The exit code is still 0. |
 | Is it faster? | On toy tasks 1.2 to 5.8 times faster. On the real ticket **1.75 times slower**. 1.19 solved the replayed ticket in about the same time as in production (596 s vs. 605 s), so the gap to v2 is far larger than the spread between the two 1.19 runs. |
 | Why the difference? | The toy-task gain is a fixed saving on the first prompt of a session (about 15 s). Per step both versions are equally fast; on the real ticket the model simply took 95 steps instead of 55. |
@@ -70,11 +70,12 @@ surviving mutants.
 
 | Topic | 1.19.0 | 2.0.25 | Consequence |
 |---|---|---|---|
-| Default permissions of the `build` agent | access outside the project: `ask` | everything `allow` | Without an explicit rule there is no sandbox boundary any more. Confirmed in a probe run before the benchmark: shell and read reached a folder outside the project without asking. |
+| Default permissions of the `build` agent | access outside the project: `ask` | everything `allow` | Without an explicit rule there is no sandbox boundary any more. Confirmed in a probe run before the benchmark: shell and read reached a folder outside the project without asking. The v2 documentation now states this default. |
 | Denied permission in non-interactive mode | session ends silently after the tool call, no report (0 of 6 runs) | the model gets "this non-interactive run cannot ask the user for permission ... continue without this action" and reports (6 of 6) | the long-standing silent abort is fixed |
 | Exit code after a denial | 0 | 0 | a wrapper still has to detect a missing report |
 | `run` without `--standalone` | n/a | talks to a background service that does not see the client's `OPENCODE_CONFIG_CONTENT` | permission overrides have no effect; `--standalone` is required |
-| AGENTS.md discovery | stops at the git root | walks up to the home directory when the working directory lies below it | a checkout below a workspace folder silently loads that workspace's AGENTS.md (in our case about 37 KB, roughly 10k tokens of unrelated orchestrator rules) into every session; no config switch found |
+| AGENTS.md discovery | stops at the git root | walks up to the home directory when the working directory lies below it | a checkout below a workspace folder silently loads that workspace's AGENTS.md (in our case about 37 KB, roughly 10k tokens of unrelated orchestrator rules) into every session. This is documented for v2; the only switch, `OPENCODE_DISABLE_PROJECT_CONFIG=1`, also drops the repo's own AGENTS.md. |
+| Path arguments of shell commands, e.g. `cat ../outside/note.txt` | checked against `external_directory` (denied in the non-interactive mode; checked on 1.19.1 after the benchmark) | not checked, **even with an explicit `ask` rule**; only the working directory and the targets of `cd`, `pushd` and similar are checked | an explicit `ask` rule restores the 1.19 boundary for file tools and directory changes, not for shell command arguments |
 | `question` tool in non-interactive mode | not observed | called in 1 of 3 `read` runs (an extra error and step) | deny it explicitly |
 | Existing `opencode.json` | | normalised without loss (providers, variants, limits, compaction) | not a blocker |
 | CLI | `--variant`, `--dir` | variant as `-m provider/model#variant`, no `--dir` | wrappers need adjusting |
@@ -96,6 +97,13 @@ The source references (default rules, file access, AGENTS.md discovery in
 `packages/core/src/config/plugin/instruction.ts`) were read on the upstream development
 branch, not exactly at 2.0.25. Every row above except the source reading was also observed
 in runs.
+
+This configuration does **not** restore the 1.19 boundary completely: a shell command that
+reads or writes a path outside the project through its arguments runs without a permission
+request in v2. The micro benchmark did not catch this, because its shell scenario changed
+directory first (`cd ../..`), which v2 does check. The upstream security policy states that the
+permission system is a UX feature, not a sandbox, and recommends a container or VM for real
+isolation.
 
 ## 4. Speed
 
@@ -202,8 +210,10 @@ from chance.
 
 1. **opencode 2 is not a drop-in replacement for an unattended lane.** Its default
    permissions allow everything, `run` without `--standalone` ignores permission overrides,
-   AGENTS.md discovery reaches beyond the repository, and the `question` tool is available in
-   unattended runs. Each of these changes the lane without any visible error.
+   AGENTS.md discovery reaches beyond the repository, the `question` tool is available in
+   unattended runs, and shell commands can reach paths outside the project through their
+   arguments even with an explicit `ask` rule. Each of these changes the lane without any
+   visible error.
 2. **The silent abort is fixed**, but the exit code stays 0. A wrapper that fails a run
    without a final report is needed in both versions.
 3. **Faster on toy tasks, slower on real work.** The toy-task gain is a fixed prompt-cache
@@ -215,4 +225,11 @@ from chance.
 
 We stay on 1.19 and repeat the real-ticket comparison with several runs per version once 2.x
 is the regular npm release, with `--standalone`, the permission rules above, checkouts
-outside the home directory and the run wrapper's report check.
+outside the home directory and the run wrapper's report check. Since the permission rules
+do not cover shell arguments in v2, a lane on v2 would need a container or VM as its actual
+boundary.
+
+*Updated after publication (October 2026): added the shell path-argument row and its
+consequence, and the documentation status of the default permissions and the AGENTS.md walk.
+A feature request for a configurable discovery boundary is upstream as
+[anomalyco/opencode#55999](https://github.com/anomalyco/opencode/issues/55999).*

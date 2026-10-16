@@ -18,7 +18,7 @@ auf Spielaufgaben und die Wiederholung eines echten Tickets.
 
 | Frage | Antwort |
 |---|---|
-| Ist opencode 2 ein direkter Ersatz? | **Nein.** Vier Voreinstellungen ändern sich still und hätten die Sandbox-Grenze der Lane aufgehoben oder ihren Kontext verändert (Abschnitt 3). |
+| Ist opencode 2 ein direkter Ersatz? | **Nein.** Fünf Verhaltensänderungen geschehen still und hätten die Rechte-Grenze der Lane aufgehoben oder ihren Kontext verändert (Abschnitt 3). Auch mit expliziter `ask`-Regel erreichen Shell-Befehle über ihre Argumente Pfade außerhalb des Projekts. |
 | Behebt opencode 2 den stillen Abbruch nach einer abgelehnten Rückfrage? | **Ja.** Das Modell erfährt von der Ablehnung und endet mit einem Bericht. Der Exit-Code bleibt 0. |
 | Ist es schneller? | Auf Spielaufgaben 1,2- bis 5,8-mal schneller. Auf dem echten Ticket **1,75-mal langsamer**. 1.19 löste das wiederholte Ticket in etwa derselben Zeit wie im Produktivbetrieb (596 s gegen 605 s), der Abstand zu v2 ist also weit größer als die Streuung zwischen den beiden 1.19-Läufen. |
 | Woher der Unterschied? | Der Vorteil auf Spielaufgaben ist eine feste Ersparnis beim ersten Prompt einer Session (etwa 15 s). Pro Schritt sind beide Versionen gleich schnell; auf dem echten Ticket brauchte das Modell schlicht 95 statt 55 Schritte. |
@@ -69,11 +69,12 @@ Zeilen für den Deployment-Dienst überlebten Mutanten.
 
 | Thema | 1.19.0 | 2.0.25 | Folge |
 |---|---|---|---|
-| Standardrechte des Agenten `build` | Zugriff außerhalb des Projekts: `ask` | alles `allow` | Ohne explizite Regel gibt es keine Sandbox-Grenze mehr. In einem Probelauf vor dem Benchmark bestätigt: Shell und Read erreichten einen Ordner außerhalb des Projekts ohne Rückfrage. |
+| Standardrechte des Agenten `build` | Zugriff außerhalb des Projekts: `ask` | alles `allow` | Ohne explizite Regel gibt es keine Sandbox-Grenze mehr. In einem Probelauf vor dem Benchmark bestätigt: Shell und Read erreichten einen Ordner außerhalb des Projekts ohne Rückfrage. Die v2-Dokumentation nennt diesen Standard inzwischen ausdrücklich. |
 | Abgelehnte Rückfrage im nicht-interaktiven Modus | Session endet still nach dem Tool-Aufruf, kein Bericht (0 von 6 Läufen) | das Modell erhält "this non-interactive run cannot ask the user for permission ... continue without this action" und berichtet (6 von 6) | der altbekannte stille Abbruch ist behoben |
 | Exit-Code nach einer Ablehnung | 0 | 0 | ein Wrapper muss einen fehlenden Bericht weiterhin selbst erkennen |
 | `run` ohne `--standalone` | entfällt | spricht einen Hintergrunddienst an, der das `OPENCODE_CONFIG_CONTENT` des Clients nicht sieht | Rechte-Overrides wirken nicht; `--standalone` ist Pflicht |
-| Suche nach AGENTS.md | stoppt am Git-Root | läuft bis zum Home-Verzeichnis hinauf, wenn das Arbeitsverzeichnis darunter liegt | ein Checkout unterhalb eines Workspace-Ordners lädt still dessen AGENTS.md (bei uns etwa 37 KB, rund 10k Tokens fremder Orchestrator-Regeln) in jede Session; keinen Config-Schalter gefunden |
+| Suche nach AGENTS.md | stoppt am Git-Root | läuft bis zum Home-Verzeichnis hinauf, wenn das Arbeitsverzeichnis darunter liegt | ein Checkout unterhalb eines Workspace-Ordners lädt still dessen AGENTS.md (bei uns etwa 37 KB, rund 10k Tokens fremder Orchestrator-Regeln) in jede Session. Für v2 ist das so dokumentiert; der einzige Schalter, `OPENCODE_DISABLE_PROJECT_CONFIG=1`, schaltet auch die AGENTS.md des Repos selbst ab. |
+| Pfad-Argumente von Shell-Befehlen, z. B. `cat ../outside/note.txt` | gegen `external_directory` geprüft (im nicht-interaktiven Modus abgelehnt; nach dem Benchmark auf 1.19.1 geprüft) | nicht geprüft, **auch mit expliziter `ask`-Regel**; geprüft werden nur das Arbeitsverzeichnis und die Ziele von `cd`, `pushd` und ähnlichen | eine explizite `ask`-Regel stellt die Grenze von 1.19 für Datei-Tools und Verzeichniswechsel wieder her, nicht für Argumente von Shell-Befehlen |
 | Tool `question` im nicht-interaktiven Modus | nicht beobachtet | in 1 von 3 `read`-Läufen aufgerufen (ein zusätzlicher Fehler und Schritt) | explizit verbieten |
 | Bestehende `opencode.json` | | verlustfrei normalisiert (Provider, Varianten, Limits, Compaction) | kein Hindernis |
 | CLI | `--variant`, `--dir` | Variante als `-m provider/model#variant`, kein `--dir` | Wrapper anpassen |
@@ -96,6 +97,13 @@ Die Quellcode-Belege (Standardregeln, Dateizugriff, AGENTS.md-Suche in
 `packages/core/src/config/plugin/instruction.ts`) stammen vom Upstream-Entwicklungszweig,
 nicht exakt von 2.0.25. Jede Zeile oben außer der Quellcode-Lesung wurde auch in Läufen
 beobachtet.
+
+Diese Konfiguration stellt die Grenze von 1.19 **nicht** vollständig wieder her: Ein
+Shell-Befehl, der über seine Argumente einen Pfad außerhalb des Projekts liest oder schreibt,
+läuft in v2 ohne Rückfrage. Der Mikro-Benchmark hat das nicht erfasst, weil sein
+Shell-Szenario zuerst das Verzeichnis wechselte (`cd ../..`), was v2 prüft. Die
+Sicherheitsrichtlinie von opencode sagt, dass das Rechtesystem eine UX-Funktion ist und keine
+Sandbox, und empfiehlt für echte Isolation einen Container oder eine VM.
 
 ## 4. Tempo
 
@@ -208,9 +216,10 @@ nicht von Zufall trennen.
 
 1. **opencode 2 ist kein direkter Ersatz für eine unbeaufsichtigte Lane.** Die Standardrechte
    erlauben alles, `run` ohne `--standalone` ignoriert Rechte-Overrides, die Suche nach
-   AGENTS.md reicht über das Repository hinaus, und das Tool `question` steht in
-   unbeaufsichtigten Läufen zur Verfügung. Jede dieser Änderungen verändert die Lane ohne
-   sichtbaren Fehler.
+   AGENTS.md reicht über das Repository hinaus, das Tool `question` steht in
+   unbeaufsichtigten Läufen zur Verfügung, und Shell-Befehle erreichen über ihre Argumente
+   Pfade außerhalb des Projekts, auch mit expliziter `ask`-Regel. Jede dieser Änderungen
+   verändert die Lane ohne sichtbaren Fehler.
 2. **Der stille Abbruch ist behoben**, aber der Exit-Code bleibt 0. Ein Wrapper, der einen
    Lauf ohne abschließenden Bericht als fehlgeschlagen wertet, ist in beiden Versionen nötig.
 3. **Schneller auf Spielaufgaben, langsamer bei echter Arbeit.** Der Vorteil auf Spielaufgaben
@@ -222,4 +231,11 @@ nicht von Zufall trennen.
 
 Wir bleiben bei 1.19 und wiederholen den Vergleich auf echten Tickets mit mehreren Läufen pro
 Version, sobald 2.x das reguläre npm-Release ist: mit `--standalone`, den Rechte-Regeln oben,
-Checkouts außerhalb des Home-Verzeichnisses und der Berichtsprüfung des Lauf-Wrappers.
+Checkouts außerhalb des Home-Verzeichnisses und der Berichtsprüfung des Lauf-Wrappers. Da
+die Rechte-Regeln in v2 keine Shell-Argumente abdecken, bräuchte eine Lane auf v2 einen
+Container oder eine VM als eigentliche Grenze.
+
+*Nach der Veröffentlichung ergänzt (Oktober 2026): die Zeile zu Pfad-Argumenten in der Shell
+samt Folge sowie der Dokumentationsstand zu den Standardrechten und zur AGENTS.md-Suche. Ein
+Feature-Request für eine einstellbare Suchgrenze liegt upstream als
+[anomalyco/opencode#55999](https://github.com/anomalyco/opencode/issues/55999).*
