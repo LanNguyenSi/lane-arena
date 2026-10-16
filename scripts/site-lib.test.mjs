@@ -7,13 +7,24 @@ import { checkLinks, decodeEntities, extractRefs, parseSrcset, rewriteHref, site
 
 const FROM = 'runs/2026-10-pilot';
 
-test('siteTarget maps root READMEs and edition reports, nothing else', () => {
+test('siteTarget maps root READMEs, edition and harness reports, nothing else', () => {
   assert.deepEqual(siteTarget('README.md'), { path: 'index.html', query: '?lang=en' });
   assert.deepEqual(siteTarget('README.de.md'), { path: 'index.html', query: '?lang=de' });
   assert.deepEqual(siteTarget('runs/2026-11-x/README.md'), { path: 'runs/2026-11-x/report.html', query: '' });
   assert.deepEqual(siteTarget('runs/2026-11-x/README.de.md'), { path: 'runs/2026-11-x/report.de.html', query: '' });
   assert.equal(siteTarget('runs/2026-11-x/notes.md'), null);
   assert.equal(siteTarget('docs/README.md'), null);
+  assert.deepEqual(siteTarget('harness/2026-10-x/README.md'), { path: 'harness/2026-10-x/report.html', query: '' });
+  assert.deepEqual(siteTarget('harness/2026-10-x/README.de.md'), { path: 'harness/2026-10-x/report.de.html', query: '' });
+  assert.equal(siteTarget('harness/2026-10-x/notes.md'), null);
+  assert.equal(siteTarget('docs/x/README.md'), null);
+});
+
+test('rewriteHref: from a harness report to an arena edition and back', () => {
+  const H = 'harness/2026-10-x';
+  assert.equal(rewriteHref('../../runs/2026-10-pilot/README.md', H), '../../runs/2026-10-pilot/report.html');
+  assert.equal(rewriteHref('../../harness/2026-10-x/README.de.md', FROM), '../../harness/2026-10-x/report.de.html');
+  assert.equal(rewriteHref('../../README.de.md', H), '../../?lang=de');
 });
 
 test('rewriteHref: sibling edition report', () => {

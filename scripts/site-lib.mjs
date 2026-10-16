@@ -4,18 +4,22 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, posix, relative, resolve } from 'node:path';
 
+// Top-level folders whose subfolders each hold one report: arena editions (runs/)
+// and harness comparisons (harness/).
+export const SECTIONS = ['runs', 'harness'];
+
 export const REPORTS = [
   { source: 'README.md', target: 'report.html', lang: 'en' },
   { source: 'README.de.md', target: 'report.de.html', lang: 'de' },
 ];
 
-// Repo-relative Markdown path -> site path. Edition reports map to their HTML page,
+// Repo-relative Markdown path -> site path. Edition and harness reports map to their HTML page,
 // the repository README maps to the start page in the matching language.
 export function siteTarget(repoPath) {
   if (repoPath === 'README.md') return { path: 'index.html', query: '?lang=en' };
   if (repoPath === 'README.de.md') return { path: 'index.html', query: '?lang=de' };
-  const m = repoPath.match(/^(runs\/[^/]+)\/(README(?:\.de)?\.md)$/);
-  if (m) {
+  const m = repoPath.match(/^([^/]+\/[^/]+)\/(README(?:\.de)?\.md)$/);
+  if (m && SECTIONS.includes(m[1].split('/')[0])) {
     const report = REPORTS.find((r) => r.source === m[2]);
     return { path: `${m[1]}/${report.target}`, query: '' };
   }
