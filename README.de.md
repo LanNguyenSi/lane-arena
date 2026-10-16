@@ -15,6 +15,16 @@ Alle Ausgaben und Präsentationen: https://lannguyensi.github.io/lane-arena/?lan
 |---|---|---|---|---|---|
 | Pilot | Oktober 2026 | 2 (mittel, schwer) | Lane (Qwen3.8-Flash-Next), Claude Haiku/Sonnet/Opus 5.5, GPT-6.1-Sol, GPT-6-Luna | [Bericht](runs/2026-10-pilot/README.de.md) | [online](https://lannguyensi.github.io/lane-arena/runs/2026-10-pilot/de.html) · [PDF](runs/2026-10-pilot/presentation.de.pdf) |
 
+## Harness-Vergleiche
+
+Gleiches Modell, anderer Agent-Harness. Das sind keine Arena-Ausgaben: keine
+konkurrierenden Teilnehmer, kein blinder Review, keine versteckten Tests, die Spielregeln
+unten gelten daher nicht. Jeder Bericht beschreibt seinen eigenen Aufbau.
+
+| Vergleich | Datum | Was | Bericht |
+|---|---|---|---|
+| opencode 1.19 gegen 2 | Oktober 2026 | Lane (Qwen3.8-Flash-Next) in opencode 1.19.0 und 2.0.25: Sandbox-Verhalten, Mikro-Benchmark, ein echtes Ticket wiederholt | [Bericht](harness/2026-10-opencode-2/README.de.md) |
+
 ## Spielregeln (gelten für alle Ausgaben)
 
 - Alle Teilnehmer bekommen pro Aufgabe denselben Brief und arbeiten in einem eigenen,
@@ -39,14 +49,16 @@ runs/<jjjj-mm>-<name>/
 ```
 
 Eine neue Ausgabe bekommt einen eigenen Ordner unter `runs/` und je eine Zeile in den
-Tabellen von `README.md` und `README.de.md` sowie eine Karte in `index.html`.
+Tabellen von `README.md` und `README.de.md` sowie eine Karte in `index.html`. Ein
+Harness-Vergleich läuft genauso unter `harness/<jjjj-mm>-<name>/` (nur Bericht, Folien
+optional) mit einer Zeile in den Harness-Tabellen.
 
-Zu jeder Ausgabe enthält das Repository nur den Bericht und die Folien. Briefs, versteckte
+Zu jeder Ausgabe und jedem Vergleich enthält das Repository nur den Bericht und die Folien. Briefs, versteckte
 Tests, Laufprotokolle und das Harness, mit dem sie lief, sind hier nicht veröffentlicht.
 
 Die Pages-Seite wird bei jedem Push auf `main` gebaut (`.github/workflows/pages.yml`, lokal
 `npm ci && npm run build` nach `_site/`). Der Build rendert `README.md` und `README.de.md`
-jeder Ausgabe zu `report.html` und `report.de.html`, schreibt relative Links im Bericht auf
+jeder Ausgabe und jedes Vergleichs zu `report.html` und `report.de.html`, schreibt relative Links im Bericht auf
 ihre Ziele auf der Seite um und bricht ab, wenn ein lokaler Link auf der Seite auf eine
 Datei zeigt, die es nicht gibt oder die außerhalb der Seite liegt. Anker nach `#` werden
 nicht geprüft. Die Berichte bleiben Markdown; das HTML wird nie eingecheckt.

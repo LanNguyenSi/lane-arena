@@ -1,8 +1,9 @@
 // Builds the GitHub Pages site into _site/.
 //
-// Static files are copied from an allowlist (index.html, .nojekyll, runs/** without
-// Markdown). Every edition report (runs/<edition>/README.md and README.de.md) is
-// rendered to report.html and report.de.html next to the slides. Relative links in
+// Static files are copied from an allowlist (index.html, .nojekyll, runs/** and
+// harness/** without Markdown). Every report (<section>/<name>/README.md and
+// README.de.md, section runs or harness) is rendered to report.html and
+// report.de.html next to the slides. Relative links in
 // the reports are rewritten to their site targets, and the build fails when any local
 // href, src or srcset (quoted or unquoted, entity-decoded, srcset split per the HTML rule)
 // in the finished site points at a file that does not exist or lies
@@ -12,7 +13,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statS
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Marked } from 'marked';
-import { REPORTS, checkLinks, rewriteHref } from './site-lib.mjs';
+import { REPORTS, SECTIONS, checkLinks, rewriteHref } from './site-lib.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, '_site');
@@ -69,8 +70,7 @@ ${body}
 `;
 }
 
-function renderReport(edition, report) {
-  const fromDir = `runs/${edition}`;
+function renderReport(fromDir, report) {
   const marked = new Marked({ gfm: true });
   marked.use({
     walkTokens(token) {
@@ -79,7 +79,7 @@ function renderReport(edition, report) {
   });
   const md = readFileSync(join(root, fromDir, report.source), 'utf8');
   const h1 = md.match(/^# (.+)$/m);
-  const title = h1 ? h1[1].replace(/[`*_]/g, '').trim() : edition;
+  const title = h1 ? h1[1].replace(/[`*_]/g, '').trim() : fromDir;
   const body = marked
     .parse(md)
     .replace(/<table>/g, '<div class="table-wrap"><table>')
@@ -91,14 +91,19 @@ function renderReport(edition, report) {
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out);
 for (const f of ['index.html', '.nojekyll']) cpSync(join(root, f), join(out, f));
-cpSync(join(root, 'runs'), join(out, 'runs'), { recursive: true, filter: (src) => !src.endsWith('.md') });
-
-const editions = readdirSync(join(root, 'runs')).filter((e) => statSync(join(root, 'runs', e)).isDirectory());
+const folders = [];
+for (const section of SECTIONS) {
+  if (!existsSync(join(root, section))) continue;
+  cpSync(join(root, section), join(out, section), { recursive: true, filter: (src) => !src.endsWith('.md') });
+  for (const name of readdirSync(join(root, section))) {
+    if (statSync(join(root, section, name)).isDirectory()) folders.push(`${section}/${name}`);
+  }
+}
 let rendered = 0;
-for (const edition of editions) {
+for (const fromDir of folders) {
   for (const report of REPORTS) {
-    if (!existsSync(join(root, 'runs', edition, report.source))) continue;
-    renderReport(edition, report);
+    if (!existsSync(join(root, fromDir, report.source))) continue;
+    renderReport(fromDir, report);
     rendered++;
   }
 }
@@ -108,4 +113,4 @@ if (broken.length) {
   console.error(`Broken local links (${broken.length}):\n  ${broken.join('\n  ')}`);
   process.exit(1);
 }
-console.log(`Built _site/: ${rendered} report page(s) from ${editions.length} edition(s), local links OK.`);
+console.log(`Built _site/: ${rendered} report page(s) from ${folders.length} folder(s), local links OK.`);
