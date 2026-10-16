@@ -18,7 +18,7 @@ auf Spielaufgaben und die Wiederholung eines echten Tickets.
 
 | Frage | Antwort |
 |---|---|
-| Ist opencode 2 ein direkter Ersatz? | **Nein.** Fünf Verhaltensänderungen geschehen still und hätten die Rechte-Grenze der Lane aufgehoben oder ihren Kontext verändert (Abschnitt 3). Auch mit expliziter `ask`-Regel erreichen Shell-Befehle über ihre Argumente Pfade außerhalb des Projekts. |
+| Ist opencode 2 ein direkter Ersatz? | **Nein.** Fünf Verhaltensänderungen geschehen still und hätten die Rechte-Grenze der Lane aufgehoben oder ihren Kontext verändert (Abschnitt 3, aufgezählt in Abschnitt 7, Punkt 1). Auch mit expliziter `ask`-Regel erreichen Shell-Befehle über ihre Argumente Pfade außerhalb des Projekts. |
 | Behebt opencode 2 den stillen Abbruch nach einer abgelehnten Rückfrage? | **Ja.** Das Modell erfährt von der Ablehnung und endet mit einem Bericht. Der Exit-Code bleibt 0. |
 | Ist es schneller? | Auf Spielaufgaben 1,2- bis 5,8-mal schneller. Auf dem echten Ticket **1,75-mal langsamer**. 1.19 löste das wiederholte Ticket in etwa derselben Zeit wie im Produktivbetrieb (596 s gegen 605 s), der Abstand zu v2 ist also weit größer als die Streuung zwischen den beiden 1.19-Läufen. |
 | Woher der Unterschied? | Der Vorteil auf Spielaufgaben ist eine feste Ersparnis beim ersten Prompt einer Session (etwa 15 s). Pro Schritt sind beide Versionen gleich schnell; auf dem echten Ticket brauchte das Modell schlicht 95 statt 55 Schritte. |
@@ -33,7 +33,7 @@ auf Spielaufgaben und die Wiederholung eines echten Tickets.
 | Effort | Variante `xhigh` in beiden Versionen (1.19: `--variant xhigh`, 2.x: `-m provider/model#xhigh`). |
 | Arm v1 | opencode **1.19.0**, das reguläre npm-Release (`opencode run --format json`). |
 | Arm v2 | opencode **2.0.25** (`run --standalone --format json`). 2.x war zu diesem Zeitpunkt nicht das npm-Release `latest`; die Version stammt aus dem Homebrew-Bottle, isoliert installiert mit eigenen Config-, Daten-, State- und Cache-Verzeichnissen, sodass die produktive 1.19-Installation unberührt blieb. |
-| Rechte | Beide Arme: Zugriff außerhalb des Projektverzeichnisses auf `ask` (Standard in 1.19; für 2.x explizit gesetzt, siehe Abschnitt 3). Im nicht-interaktiven Modus wird aus `ask` eine automatische Ablehnung. |
+| Rechte | Beide Arme: Zugriff außerhalb des Projektverzeichnisses auf `ask` (Standard in 1.19; für 2.x explizit gesetzt, siehe Abschnitt 3). Im nicht-interaktiven Modus wird aus `ask` eine automatische Ablehnung. Nicht gleichwertig für Pfad-Argumente von Shell-Befehlen (Abschnitt 3); die Läufe auf dem echten Ticket setzten keinen Shell-Befehl mit relativem Pfad außerhalb des Projekts ab. |
 | Arbeitsverzeichnisse | Für jeden Lauf frische Kopien außerhalb des Home-Verzeichnisses (Grund: Abschnitt 3, AGENTS.md). |
 | Serverlast | Beide llama.cpp-Slots zu Beginn jedes Laufs frei. |
 | Zählung | Tokens, Schritte und Tool-Aufrufe aus dem vollständigen Export jeder Session, in beiden Armen aus derselben Art von Quelle. |
@@ -73,7 +73,7 @@ Zeilen für den Deployment-Dienst überlebten Mutanten.
 | Abgelehnte Rückfrage im nicht-interaktiven Modus | Session endet still nach dem Tool-Aufruf, kein Bericht (0 von 6 Läufen) | das Modell erhält "this non-interactive run cannot ask the user for permission ... continue without this action" und berichtet (6 von 6) | der altbekannte stille Abbruch ist behoben |
 | Exit-Code nach einer Ablehnung | 0 | 0 | ein Wrapper muss einen fehlenden Bericht weiterhin selbst erkennen |
 | `run` ohne `--standalone` | entfällt | spricht einen Hintergrunddienst an, der das `OPENCODE_CONFIG_CONTENT` des Clients nicht sieht | Rechte-Overrides wirken nicht; `--standalone` ist Pflicht |
-| Suche nach AGENTS.md | stoppt am Git-Root | läuft bis zum Home-Verzeichnis hinauf, wenn das Arbeitsverzeichnis darunter liegt | ein Checkout unterhalb eines Workspace-Ordners lädt still dessen AGENTS.md (bei uns etwa 37 KB, rund 10k Tokens fremder Orchestrator-Regeln) in jede Session. Für v2 ist das so dokumentiert; der einzige Schalter, `OPENCODE_DISABLE_PROJECT_CONFIG=1`, schaltet auch die AGENTS.md des Repos selbst ab. |
+| Suche nach AGENTS.md | stoppt am Git-Root | läuft bis zum Home-Verzeichnis hinauf, wenn das Arbeitsverzeichnis darunter liegt | ein Checkout unterhalb eines Workspace-Ordners lädt still dessen AGENTS.md (bei uns etwa 37 KB, rund 10k Tokens fremder Orchestrator-Regeln) in jede Session. Für v2 ist das so dokumentiert; der einzige Schalter, `OPENCODE_DISABLE_PROJECT_CONFIG=1`, schaltet die Projekt-Erkennung als Ganzes ab, einschließlich der AGENTS.md des Repos selbst. |
 | Pfad-Argumente von Shell-Befehlen, z. B. `cat ../outside/note.txt` | gegen `external_directory` geprüft (im nicht-interaktiven Modus abgelehnt; nach dem Benchmark auf 1.19.1 geprüft) | nicht geprüft, **auch mit expliziter `ask`-Regel**; geprüft werden nur das Arbeitsverzeichnis und die Ziele von `cd`, `pushd` und ähnlichen | eine explizite `ask`-Regel stellt die Grenze von 1.19 für Datei-Tools und Verzeichniswechsel wieder her, nicht für Argumente von Shell-Befehlen |
 | Tool `question` im nicht-interaktiven Modus | nicht beobachtet | in 1 von 3 `read`-Läufen aufgerufen (ein zusätzlicher Fehler und Schritt) | explizit verbieten |
 | Bestehende `opencode.json` | | verlustfrei normalisiert (Provider, Varianten, Limits, Compaction) | kein Hindernis |
@@ -94,13 +94,15 @@ der ersten Regel; die `question`-Regel kam dazu, nachdem der Mikro-Benchmark den
 ```
 
 Die Quellcode-Belege (Standardregeln, Dateizugriff, AGENTS.md-Suche in
-`packages/core/src/config/plugin/instruction.ts`) stammen vom Upstream-Entwicklungszweig,
+`packages/core/src/config/plugin/instruction.ts`, Verzeichnis-Erkennung der Shell in
+`packages/core/src/shell/parse.ts`) stammen vom Upstream-Entwicklungszweig,
 nicht exakt von 2.0.25. Jede Zeile oben außer der Quellcode-Lesung wurde auch in Läufen
 beobachtet.
 
 Diese Konfiguration stellt die Grenze von 1.19 **nicht** vollständig wieder her: Ein
-Shell-Befehl, der über seine Argumente einen Pfad außerhalb des Projekts liest oder schreibt,
-läuft in v2 ohne Rückfrage. Der Mikro-Benchmark hat das nicht erfasst, weil sein
+Shell-Befehl, der über seine Argumente einen Pfad außerhalb des Projekts liest, läuft in v2
+ohne Rückfrage (getestet mit `cat`; laut Quellcode werden auch Schreibzugriffe über Argumente
+nicht geprüft). Der Mikro-Benchmark hat das nicht erfasst, weil sein
 Shell-Szenario zuerst das Verzeichnis wechselte (`cd ../..`), was v2 prüft. Die
 Sicherheitsrichtlinie von opencode sagt, dass das Rechtesystem eine UX-Funktion ist und keine
 Sandbox, und empfiehlt für echte Isolation einen Container oder eine VM.

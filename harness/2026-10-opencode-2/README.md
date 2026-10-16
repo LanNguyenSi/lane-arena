@@ -18,7 +18,7 @@ the replay of one real ticket.
 
 | Question | Answer |
 |---|---|
-| Is opencode 2 a drop-in replacement? | **No.** Five behaviour changes are silent and would have removed the lane's permission boundary or altered its context (section 3). Even with an explicit `ask` rule, shell commands reach outside paths through their arguments. |
+| Is opencode 2 a drop-in replacement? | **No.** Five behaviour changes are silent and would have removed the lane's permission boundary or altered its context (section 3, listed in section 7, item 1). Even with an explicit `ask` rule, shell commands reach outside paths through their arguments. |
 | Does opencode 2 fix the silent abort after a denied permission? | **Yes.** The model is told about the denial and finishes with a report. The exit code is still 0. |
 | Is it faster? | On toy tasks 1.2 to 5.8 times faster. On the real ticket **1.75 times slower**. 1.19 solved the replayed ticket in about the same time as in production (596 s vs. 605 s), so the gap to v2 is far larger than the spread between the two 1.19 runs. |
 | Why the difference? | The toy-task gain is a fixed saving on the first prompt of a session (about 15 s). Per step both versions are equally fast; on the real ticket the model simply took 95 steps instead of 55. |
@@ -33,7 +33,7 @@ the replay of one real ticket.
 | Effort | Variant `xhigh` in both versions (1.19: `--variant xhigh`, 2.x: `-m provider/model#xhigh`). |
 | Arm v1 | opencode **1.19.0**, the regular npm release (`opencode run --format json`). |
 | Arm v2 | opencode **2.0.25** (`run --standalone --format json`). At the time 2.x was not the npm `latest` release; it came from the Homebrew bottle, installed in isolation with its own config, data, state and cache directories, so the production 1.19 install stayed untouched. |
-| Permissions | Both arms: access outside the project directory set to `ask` (1.19 default; set explicitly for 2.x, see section 3). In the non-interactive mode an `ask` becomes an automatic denial. |
+| Permissions | Both arms: access outside the project directory set to `ask` (1.19 default; set explicitly for 2.x, see section 3). In the non-interactive mode an `ask` becomes an automatic denial. Not equivalent for path arguments of shell commands (section 3); the real-ticket runs issued no shell command with a relative path outside the project. |
 | Working directories | Fresh copies outside the user's home directory for every run (reason: section 3, AGENTS.md). |
 | Server load | Both llama.cpp slots idle at the start of every run. |
 | Counting | Tokens, steps and tool calls from each session's full export, in both arms from the same kind of source. |
@@ -74,7 +74,7 @@ surviving mutants.
 | Denied permission in non-interactive mode | session ends silently after the tool call, no report (0 of 6 runs) | the model gets "this non-interactive run cannot ask the user for permission ... continue without this action" and reports (6 of 6) | the long-standing silent abort is fixed |
 | Exit code after a denial | 0 | 0 | a wrapper still has to detect a missing report |
 | `run` without `--standalone` | n/a | talks to a background service that does not see the client's `OPENCODE_CONFIG_CONTENT` | permission overrides have no effect; `--standalone` is required |
-| AGENTS.md discovery | stops at the git root | walks up to the home directory when the working directory lies below it | a checkout below a workspace folder silently loads that workspace's AGENTS.md (in our case about 37 KB, roughly 10k tokens of unrelated orchestrator rules) into every session. This is documented for v2; the only switch, `OPENCODE_DISABLE_PROJECT_CONFIG=1`, also drops the repo's own AGENTS.md. |
+| AGENTS.md discovery | stops at the git root | walks up to the home directory when the working directory lies below it | a checkout below a workspace folder silently loads that workspace's AGENTS.md (in our case about 37 KB, roughly 10k tokens of unrelated orchestrator rules) into every session. This is documented for v2; the only switch, `OPENCODE_DISABLE_PROJECT_CONFIG=1`, turns off project discovery as a whole, including the repo's own AGENTS.md. |
 | Path arguments of shell commands, e.g. `cat ../outside/note.txt` | checked against `external_directory` (denied in the non-interactive mode; checked on 1.19.1 after the benchmark) | not checked, **even with an explicit `ask` rule**; only the working directory and the targets of `cd`, `pushd` and similar are checked | an explicit `ask` rule restores the 1.19 boundary for file tools and directory changes, not for shell command arguments |
 | `question` tool in non-interactive mode | not observed | called in 1 of 3 `read` runs (an extra error and step) | deny it explicitly |
 | Existing `opencode.json` | | normalised without loss (providers, variants, limits, compaction) | not a blocker |
@@ -94,13 +94,14 @@ The permission configuration we used for v2 on the real ticket, passed as
 ```
 
 The source references (default rules, file access, AGENTS.md discovery in
-`packages/core/src/config/plugin/instruction.ts`) were read on the upstream development
+`packages/core/src/config/plugin/instruction.ts`, shell directory scanning in
+`packages/core/src/shell/parse.ts`) were read on the upstream development
 branch, not exactly at 2.0.25. Every row above except the source reading was also observed
 in runs.
 
 This configuration does **not** restore the 1.19 boundary completely: a shell command that
-reads or writes a path outside the project through its arguments runs without a permission
-request in v2. The micro benchmark did not catch this, because its shell scenario changed
+reads a path outside the project through its arguments runs without a permission request in
+v2 (tested with `cat`; by the source, writes through arguments are not checked either). The micro benchmark did not catch this, because its shell scenario changed
 directory first (`cd ../..`), which v2 does check. The upstream security policy states that the
 permission system is a UX feature, not a sandbox, and recommends a container or VM for real
 isolation.
