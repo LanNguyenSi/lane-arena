@@ -50,7 +50,7 @@ runs/<yyyy-mm>-<name>/
 A new edition gets its own folder under `runs/`, a row in the tables of `README.md` and
 `README.de.md`, and a card in `index.html`. A harness comparison works the same way under
 `harness/<yyyy-mm>-<name>/` (report only, slides optional) with a row in the harness
-tables.
+tables and a card in `index.html`.
 
 For each edition and comparison the repository holds only the report and the slides. The
 briefs, hidden tests, run logs and the harness that ran it are not published here.

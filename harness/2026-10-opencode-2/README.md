@@ -78,8 +78,10 @@ surviving mutants.
 | CLI | `--variant`, `--dir` | variant as `-m provider/model#variant`, no `--dir` | wrappers need adjusting |
 | `--format json` stream | complete | omits the last `step_finish` | count from the session export instead |
 
-The permission configuration we used for v2, passed as `OPENCODE_CONFIG_CONTENT` together
-with `--standalone` (later rules win, so path-specific `allow` rules can follow the `ask`):
+The permission configuration we used for v2 on the real ticket, passed as
+`OPENCODE_CONFIG_CONTENT` together with `--standalone` (later rules win, so path-specific
+`allow` rules can follow the `ask`). The micro benchmark ran with the first rule only; the
+`question` rule was added after the micro benchmark showed the `question` call:
 
 ```json
 {"permissions": [
@@ -107,8 +109,8 @@ in runs.
 - Harness overhead (wall time minus model time) is small in both: 0.7 s (v1) and 0.5 s (v2).
 - The gap is almost entirely the **first prompt of a session**: v1 sends about 11.9k tokens
   that miss the server's prompt cache every time. v2 sends a smaller system prompt (7.8k on
-  its very first run) and after that reuses about 15.2k of 15.7k tokens from the cache,
-  although the working directory changes per run. Why v1 misses the cache is not verified.
+  its very first run). After that, in an `ok` run (two steps), about 15.2k of its 15.7k
+  prompt tokens come from the cache, although the working directory changes per run. Why v1 misses the cache is not verified.
 - `edit`: tests green in 3 of 3 runs in both versions, only the two intended files changed.
   v2 needed 5 steps instead of 6 to 8 and about half the prompt tokens.
 
@@ -129,16 +131,20 @@ in runs.
 
 Per step the two versions are equally fast, and inside one long session both use the prompt
 cache well. v2 was slower because the model did more under v2, not because the harness is
-slower. The extra time is spread out, with no single hotspot:
+slower. The extra time is spread out, with no single hotspot. Each step is counted by its
+first tool call; shell commands that run tests, lint, type checks, builds or code generation
+count as "tests, lint, build":
 
 | Step type (first tool call of the step) | v1 steps / seconds | v2 steps / seconds |
 |---|---|---|
 | edit / write | 17 / 153 | 32 / 357 |
-| other shell | 10 / 180 | 27 / 241 |
-| tests, lint, build | 15 / 87 | 14 / 193 |
+| other shell | 10 / 180 | 27 / 307 |
+| tests, lint, build | 15 / 87 | 14 / 127 |
 | read | 6 / 100 | 11 / 114 |
 | mutation probes | 2 / 14 | 5 / 62 |
 | `npm ci` | 2 / 20 | 5 / 33 |
+| other (todo list, final report without a tool) | 3 / 41 | 1 / 37 |
+| **total** | **55 / 595** | **95 / 1,037** |
 
 What v2 did in addition: more tests, two failed edits (the search string did not match),
 repeated `npm ci` after parallel installs left a partial tree, reading a tool's `--help`
@@ -187,15 +193,16 @@ from chance.
 
 1. **opencode 2 is not a drop-in replacement for an unattended lane.** Its default
    permissions allow everything, `run` without `--standalone` ignores permission overrides,
-   and AGENTS.md discovery reaches beyond the repository. Each of these changes the lane
-   without any visible error.
+   AGENTS.md discovery reaches beyond the repository, and the `question` tool is available in
+   unattended runs. Each of these changes the lane without any visible error.
 2. **The silent abort is fixed**, but the exit code stays 0. A wrapper that fails a run
    without a final report is needed in both versions.
 3. **Faster on toy tasks, slower on real work.** The toy-task gain is a fixed prompt-cache
    saving per session. On a real ticket the number of steps dominates, and the model took
    more of them under v2.
-4. **The quality lever is the brief, not the harness.** Both versions skipped the same
-   symmetric test case. Naming symmetric branches explicitly in the brief helps either way.
+4. **The brief is the more likely quality lever than the harness.** Both versions skipped the
+   same symmetric test case. Naming symmetric branches explicitly in the brief is the next
+   thing to test; this comparison did not try it.
 
 We stay on 1.19 and repeat the real-ticket comparison with several runs per version once 2.x
 is the regular npm release, with `--standalone`, the permission rules above, checkouts

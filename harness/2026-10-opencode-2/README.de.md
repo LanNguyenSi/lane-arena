@@ -78,9 +78,11 @@ Zeilen für den Deployment-Dienst überlebten Mutanten.
 | CLI | `--variant`, `--dir` | Variante als `-m provider/model#variant`, kein `--dir` | Wrapper anpassen |
 | Stream `--format json` | vollständig | lässt das letzte `step_finish` weg | stattdessen aus dem Session-Export zählen |
 
-Die Rechte-Konfiguration, die wir für v2 verwendet haben, übergeben als
-`OPENCODE_CONFIG_CONTENT` zusammen mit `--standalone` (spätere Regeln gewinnen, pfadgenaue
-`allow`-Regeln können also auf das `ask` folgen):
+Die Rechte-Konfiguration, die wir für v2 auf dem echten Ticket verwendet haben, übergeben
+als `OPENCODE_CONFIG_CONTENT` zusammen mit `--standalone` (spätere Regeln gewinnen,
+pfadgenaue `allow`-Regeln können also auf das `ask` folgen). Der Mikro-Benchmark lief nur mit
+der ersten Regel; die `question`-Regel kam dazu, nachdem der Mikro-Benchmark den
+`question`-Aufruf gezeigt hatte:
 
 ```json
 {"permissions": [
@@ -108,8 +110,9 @@ beobachtet.
 - Der Harness-Overhead (Wandzeit minus Modellzeit) ist in beiden klein: 0,7 s (v1) und 0,5 s (v2).
 - Die Lücke ist fast vollständig der **erste Prompt einer Session**: v1 schickt jedes Mal etwa
   11,9k Tokens, die den Prompt-Cache des Servers verfehlen. v2 schickt einen kleineren
-  System-Prompt (7,8k beim allerersten Lauf) und nutzt danach etwa 15,2k von 15,7k Tokens aus
-  dem Cache, obwohl das Arbeitsverzeichnis pro Lauf wechselt. Warum v1 den Cache verfehlt, ist
+  System-Prompt (7,8k beim allerersten Lauf). Danach kommen in einem `ok`-Lauf (zwei
+  Schritte) etwa 15,2k seiner 15,7k Prompt-Tokens aus dem Cache, obwohl das
+  Arbeitsverzeichnis pro Lauf wechselt. Warum v1 den Cache verfehlt, ist
   nicht verifiziert.
 - `edit`: Tests in beiden Versionen in 3 von 3 Läufen grün, nur die zwei vorgesehenen Dateien
   geändert. v2 brauchte 5 statt 6 bis 8 Schritte und etwa die Hälfte der Prompt-Tokens.
@@ -131,16 +134,20 @@ beobachtet.
 
 Pro Schritt sind beide Versionen gleich schnell, und innerhalb einer langen Session nutzen
 beide den Prompt-Cache gut. v2 war langsamer, weil das Modell unter v2 mehr getan hat, nicht
-weil der Harness langsamer ist. Die Mehrzeit verteilt sich breit, ohne einzelnen Brennpunkt:
+weil der Harness langsamer ist. Die Mehrzeit verteilt sich breit, ohne einzelnen Brennpunkt.
+Jeder Schritt zählt nach seinem ersten Tool-Aufruf; Shell-Befehle, die Tests, Lint,
+Typprüfung, Build oder Codegenerierung ausführen, zählen als "Tests, Lint, Build":
 
 | Schritt-Art (erster Tool-Aufruf des Schritts) | v1 Schritte / Sekunden | v2 Schritte / Sekunden |
 |---|---|---|
 | edit / write | 17 / 153 | 32 / 357 |
-| sonstige Shell | 10 / 180 | 27 / 241 |
-| Tests, Lint, Build | 15 / 87 | 14 / 193 |
+| sonstige Shell | 10 / 180 | 27 / 307 |
+| Tests, Lint, Build | 15 / 87 | 14 / 127 |
 | read | 6 / 100 | 11 / 114 |
 | Mutationsproben | 2 / 14 | 5 / 62 |
 | `npm ci` | 2 / 20 | 5 / 33 |
+| sonstige (Todo-Liste, Abschlussbericht ohne Tool) | 3 / 41 | 1 / 37 |
+| **gesamt** | **55 / 595** | **95 / 1.037** |
 
 Was v2 zusätzlich tat: mehr Tests, zwei fehlgeschlagene Edits (der Suchtext passte nicht),
 wiederholtes `npm ci`, nachdem parallele Installationen einen unvollständigen Baum
@@ -192,17 +199,18 @@ nicht von Zufall trennen.
 ## 7. Fazit
 
 1. **opencode 2 ist kein direkter Ersatz für eine unbeaufsichtigte Lane.** Die Standardrechte
-   erlauben alles, `run` ohne `--standalone` ignoriert Rechte-Overrides, und die Suche nach
-   AGENTS.md reicht über das Repository hinaus. Jede dieser Änderungen verändert die Lane ohne
+   erlauben alles, `run` ohne `--standalone` ignoriert Rechte-Overrides, die Suche nach
+   AGENTS.md reicht über das Repository hinaus, und das Tool `question` steht in
+   unbeaufsichtigten Läufen zur Verfügung. Jede dieser Änderungen verändert die Lane ohne
    sichtbaren Fehler.
 2. **Der stille Abbruch ist behoben**, aber der Exit-Code bleibt 0. Ein Wrapper, der einen
    Lauf ohne abschließenden Bericht als fehlgeschlagen wertet, ist in beiden Versionen nötig.
 3. **Schneller auf Spielaufgaben, langsamer bei echter Arbeit.** Der Vorteil auf Spielaufgaben
    ist eine feste Prompt-Cache-Ersparnis pro Session. Auf einem echten Ticket dominiert die
    Zahl der Schritte, und davon brauchte das Modell unter v2 mehr.
-4. **Der Qualitätshebel ist der Brief, nicht der Harness.** Beide Versionen ließen denselben
-   symmetrischen Testfall aus. Symmetrische Zweige im Brief ausdrücklich zu nennen hilft in
-   beiden Fällen.
+4. **Der wahrscheinlichere Qualitätshebel ist der Brief, nicht der Harness.** Beide Versionen
+   ließen denselben symmetrischen Testfall aus. Symmetrische Zweige im Brief ausdrücklich zu
+   nennen ist der nächste Test; dieser Vergleich hat es nicht ausprobiert.
 
 Wir bleiben bei 1.19 und wiederholen den Vergleich auf echten Tickets mit mehreren Läufen pro
 Version, sobald 2.x das reguläre npm-Release ist: mit `--standalone`, den Rechte-Regeln oben,

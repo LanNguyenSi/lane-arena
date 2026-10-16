@@ -51,7 +51,7 @@ runs/<jjjj-mm>-<name>/
 Eine neue Ausgabe bekommt einen eigenen Ordner unter `runs/` und je eine Zeile in den
 Tabellen von `README.md` und `README.de.md` sowie eine Karte in `index.html`. Ein
 Harness-Vergleich läuft genauso unter `harness/<jjjj-mm>-<name>/` (nur Bericht, Folien
-optional) mit einer Zeile in den Harness-Tabellen.
+optional) mit einer Zeile in den Harness-Tabellen und einer Karte in `index.html`.
 
 Zu jeder Ausgabe und jedem Vergleich enthält das Repository nur den Bericht und die Folien. Briefs, versteckte
 Tests, Laufprotokolle und das Harness, mit dem sie lief, sind hier nicht veröffentlicht.
