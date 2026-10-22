@@ -1,6 +1,6 @@
 **English** | [Deutsch](README.de.md)
 
-[All Lane Arena reports](../../README.md) · [Pilot edition](../../runs/2026-10-pilot/README.md)
+[All Lane Arena reports](../../README.md) · [Pilot edition](../../runs/2026-10-pilot/README.md) · [Second round (2.1.2)](../2026-10-opencode-2-1/README.md)
 
 # opencode 1.19 vs. opencode 2: same model, different harness
 
