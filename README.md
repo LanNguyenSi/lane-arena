@@ -23,6 +23,7 @@ report describes its own setup.
 | Comparison | Date | What | Report |
 |---|---|---|---|
 | opencode 1.19 vs. 2 | October 2026 | Lane (Qwen3.8-Flash-Next) in opencode 1.19.0 and 2.0.25: sandbox behaviour, micro benchmark, one real ticket replayed | [Report](harness/2026-10-opencode-2/README.md) |
+| opencode 1.19 vs. 2.1 | October 2026 | Second round: Lane in opencode 1.19.3 and 2.1.2, release state, micro benchmark, two real tickets replayed with mutation probes on known test gaps | [Report](harness/2026-10-opencode-2-1/README.md) |
 
 ## Rules (apply to every edition)
 
