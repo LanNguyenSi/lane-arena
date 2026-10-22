@@ -5,8 +5,8 @@
 # opencode 1.19 gegen opencode 2.1: die zweite Runde
 
 Eine Woche nach dem [ersten Vergleich](../2026-10-opencode-2/README.de.md) haben wir erneut
-gemessen. opencode 2 ist von 2.0.25 auf 2.1.2 gewandert, mit mehr als 1.800 Commits
-dazwischen; die Lane läuft inzwischen auf 1.19.3. Die Fragen: Hat 2.x das Verhalten behoben,
+gemessen. opencode 2 ist von 2.0.25 auf 2.1.3 gewandert, mit mehr als 1.800 Commits
+dazwischen (gemessen haben wir den Build 2.1.2); die Lane läuft inzwischen auf 1.19.3. Die Fragen: Hat 2.x das Verhalten behoben,
 das einen Umstieg blockierte, und ändert sich das Bild auf echten Tickets, wenn es zwei sind?
 
 Wie die erste Runde ist das keine Arena-Ausgabe: keine konkurrierenden Teilnehmer, kein
@@ -18,12 +18,12 @@ Tickets.
 
 | Frage | Antwort |
 |---|---|
-| Ist opencode 2 jetzt ein direkter Ersatz? | **Weiterhin nein.** Die Standardrechte erlauben weiter alles, und Shell-Befehle lesen weiter über ihre Argumente Pfade außerhalb des Projekts, ohne zu fragen, auch mit expliziter `ask`-Regel. Dazu kommt: 2.x startet nicht in der OS-Sandbox der Lane, weil die Sandbox Schreibzugriffe auf seine Datenverzeichnisse verbietet. |
+| Ist opencode 2 jetzt ein direkter Ersatz? | **Weiterhin nein.** Die Standardrechte erlauben weiter alles, und Shell-Befehle lesen weiter über ihre Argumente Pfade außerhalb des Projekts, ohne zu fragen, auch mit expliziter `ask`-Regel. |
 | Ist 2.x das reguläre Release? | **Nein.** npm `latest` ist 1.19.4; 2.x gibt es auf npm weiter nur als Entwicklungs-Snapshots und als Git-Tags ohne Release-Dateien (bis v2.1.3). Wir haben den Homebrew-Build 2.1.2 genutzt. |
 | Stiller Abbruch nach abgelehnter Rückfrage? | In beide Richtungen unverändert: 1.19.3 endete nach jeder Ablehnung ohne Abschlussbericht (3 von 3 Mikro-Läufen, 1 Ticket-Lauf); 2.1.2 arbeitete jedes Mal weiter und berichtete (2 von 2 Mikro-Läufen, 1 Ticket-Lauf). |
-| Schneller? | Auf Spielaufgaben wie zuvor 2- bis 3-mal schneller. Auf den zwei echten Tickets: beim einen etwa gleich (690 s gegen 723 s), beim anderen **1,85-mal langsamer** (1.644 s gegen 891 s). |
+| Schneller? | Auf vier von fünf Spielaufgaben 1,8- bis 2,9-mal schneller; auf einer langsamer, weil es nach einer Ablehnung weiterarbeitete. Auf den zwei echten Tickets: beim einen etwa gleich (690 s gegen 723 s), beim anderen **1,85-mal langsamer** (1.644 s gegen 891 s). |
 | Bessere Ergebnisse? | Gemischt. Auf einem Ticket schloss 2.1.2 von sich aus eine Testlücke, die 1.19.3 wiederholte. Auf dem anderen ließen beide Versionen einen von zwei symmetrischen Fällen ungetestet, jede einen anderen. Ein Lauf pro Version und Ticket: eine Richtung, kein Befund. |
-| Entscheidung | Bei 1.19 bleiben. Ein Umstieg braucht die Rechte-Regeln aus der ersten Runde, Sandbox-Regeln für die Verzeichnisse von 2.x und eine Antwort auf die Lücke bei Shell-Pfad-Argumenten. |
+| Entscheidung | Bei 1.19 bleiben. Ein Umstieg braucht die Rechte-Regeln aus der ersten Runde, einen Test in der OS-Sandbox der Lane und eine Antwort auf die Lücke bei Shell-Pfad-Argumenten. |
 
 ## 2. Aufbau
 
@@ -33,9 +33,9 @@ Tickets.
 | Effort | Variante `xhigh` in beiden Versionen. |
 | Arm v1 | opencode **1.19.3**, die Version, mit der die Lane produktiv läuft (`opencode run --format json`). |
 | Arm v2 | opencode **2.1.2** aus der Homebrew-Bottle (`run --standalone --format json`), isoliert installiert mit eigenen Config-, Daten-, State- und Cache-Verzeichnissen. |
-| Rechte | v1: sein Standard (Zugriff außerhalb des Projekts: `ask`). v2: die zwei Regeln aus der ersten Runde (`external_directory` ask, `question` deny), diesmal in der eigenen Config-Datei von v2, weil der Launcher, der v2 startet, dem Modellprozess inzwischen nur noch eine Allowlist von Umgebungsvariablen mitgibt und `OPENCODE_CONFIG_CONTENT` verwirft. Die wirksamen Regeln wurden mit `opencode debug agents` zurückgelesen. |
+| Rechte | v1: sein Standard (Zugriff außerhalb des Projekts: `ask`). v2: die zwei Regeln aus der ersten Runde (`external_directory` ask, `question` deny), diesmal in die eigene Config-Datei von v2 geschrieben statt in eine Umgebungsvariable. Die wirksamen Regeln wurden mit `opencode debug agents` zurückgelesen. |
 | Arbeitsverzeichnisse | Für jeden Lauf frische Klone außerhalb des Home-Verzeichnisses, damit die AGENTS.md-Suche von v2 keine Workspace-Datei erreicht. In den Klonen war der Default-Branch auf den Basis-Commit gesetzt und Pushen abgeschaltet. |
-| Start | opencode wurde direkt gestartet, nicht über den Lauf-Wrapper der Lane, weil der Wrapper opencode in einer OS-Sandbox startet, in der v2 nicht läuft (Abschnitt 3). |
+| Start | opencode wurde direkt gestartet, nicht über den Lauf-Wrapper der Lane, weil der Wrapper opencode in einer OS-Sandbox startet, in der unsere isolierte v2-Installation nicht läuft (Abschnitt 3). |
 | Zählung | Tokens, Schritte und Tool-Aufrufe aus dem vollständigen Export jeder Session. |
 | Qualitätsprüfung | Nach jedem Lauf: die vollständigen Testsuiten der Lösung, dazu Mutationsproben genau auf die Testlücken, die der Review des ursprünglichen Produktivlaufs gefunden hatte. |
 
@@ -77,13 +77,14 @@ auf v1 zweimal, weil der erste Lauf ohne Bericht endete (Abschnitt 4).
 | Shell, Pfad als Argument (`cat ../outside/note.txt`) | abgelehnt | **läuft ohne Rückfrage, Dateiinhalt ausgegeben** | unverändert, jetzt im Mikro-Benchmark gemessen |
 | Shell, nach abgelehntem `cd ../..` | endet | arbeitet weiter und listet `../outside` mit `ls -la ../outside`, wieder ohne Rückfrage | neue Beobachtung |
 | AGENTS.md-Suche | stoppt am Git-Root | läuft laut Quellcode von v2.1.3 weiter bis zum Home-Verzeichnis | im Quellcode unverändert; hier nicht ausgelöst, alle Klone lagen außerhalb des Home-Verzeichnisses |
-| In der OS-Sandbox der Lane (macOS `sandbox-exec`, Schreibzugriff im Wesentlichen nur auf den Worktree und die Datenverzeichnisse von 1.19) | läuft | **startet nicht**: Exit 1, Schreiben in die eigene Log-Datei verweigert | neu; das Profil müsste angepasst werden |
+| In der OS-Sandbox der Lane (macOS `sandbox-exec`, Schreibzugriff im Wesentlichen nur auf den Worktree und die Standard-Datenverzeichnisse von opencode) | läuft | unsere isolierte Installation mit eigenen Datenverzeichnissen **startet nicht**: Exit 1, Schreiben in die eigene Log-Datei verweigert | neu; eine 2.x-Installation in den Standardverzeichnissen wurde nicht getestet |
 | Release-Kanal | npm `latest` 1.19.4 | npm-Dev-Snapshots, Git-Tags bis v2.1.3 ohne Dateien, Homebrew 2.1.2 | weiterhin nicht das reguläre Release |
 
 Das Changelog zwischen 2.0.25 und 2.1.3 enthält einen Commit "v2.1 minor breaking changes"
 (Session-, Compaction- und Protokoll-Typen) und einen Fix, der verweigerte
 Dateisystem-Zugriffe beim Start in Sandboxes toleriert. Der Rechte-Code der Shell änderte sich
-um acht Zeilen (Auswahl des Parsers), die AGENTS.md-Suche gar nicht.
+um acht Zeilen (Auswahl des Parsers); die Datei mit der AGENTS.md-Suche änderte sich, die Regel,
+die die Suche am Home-Verzeichnis beendet, aber nicht.
 
 ## 4. Tempo
 
@@ -100,7 +101,7 @@ um acht Zeilen (Auswahl des Parsers), die AGENTS.md-Suche gar nicht.
 Das Muster der ersten Runde hält: v1 schickt pro Session etwa 11,9k Prompt-Tokens, die am
 Prompt-Cache des Servers vorbeigehen; v2 etwa 2,1k (2.0.25: etwa 0,5k). Langsamer ist v2 nur
 bei `shell`, weil es nach der Ablehnung weiterarbeitete (drei Schritte statt einem). `edit`:
-Tests in beiden grün, v1 mit 7 Tool-Aufrufen in 8 Schritten, v2 mit 5 in 4.
+Tests in beiden grün, v1 mit 7 Tool-Aufrufen in 8 Schritten, v2 mit 5 in 5.
 
 ### Echte Tickets (je ein Lauf, Ticket A auf v1 zweimal)
 
@@ -125,11 +126,13 @@ Tests in beiden grün, v1 mit 7 Tool-Aufrufen in 8 Schritten, v2 mit 5 in 4.
 - **Ticket A:** Mit je einem vollständigen Lauf sind beide Versionen gleich schnell (723 s
   gegen 690 s, in beiden 11 s pro Schritt).
 - **Ticket B:** v2 brauchte 1,85-mal so lange, bei etwa gleich vielen Schritten, aber 1,33
-  statt 1,02 Tool-Aufrufen pro Schritt und fast doppelt so viel Output. Testläufe gab es
-  gleich viele (16 in jedem Arm), Mutationsproben nicht (9 gegen 5).
+  statt 1,02 Tool-Aufrufen pro Schritt und fast doppelt so viel Output. v2 fuhr mehr
+  Mutationsproben als v1.
 - **Die Streuung auf 1.19 ist groß.** Der Produktivlauf von Ticket B auf derselben Version
-  1.19.3 dauerte 1.575 s, die Wiederholung 891 s. Die 1.644 s von v2 liegen also in der
-  Spanne, die 1.19 auf diesem Ticket gezeigt hat. Für Ticket A hat 1.19 jetzt drei Zeiten:
+  1.19.3 dauerte 1.575 s, die Wiederholung 891 s. Die 1.644 s von v2 liegen knapp über dem oberen
+  Ende dieser Spanne. Der Produktivlauf lief unter anderen Bedingungen (im Lauf-Wrapper, in einem
+  Worktree unterhalb des Home-Verzeichnisses), die Spanne ist also keine saubere Schätzung der
+  Streuung. Für Ticket A hat 1.19 jetzt drei Zeiten:
   605 s (produktiv), 596 s (erste Runde) und 723 s (diese Runde).
 
 ## 5. Qualität der Ergebnisse
@@ -161,7 +164,8 @@ Produktiv-Review gefunden hatte, dazu auf Ticket A das symmetrische Gegenstück.
   seinen Code nicht kompilierten und es die nächstliegenden kompilierbaren Formen nutzte; v1
   führte alle vier in wörtlicher oder fast wörtlicher Form als killed. Ob die wörtlichen
   Formen gegen den Code von v1 kompiliert hätten, wurde nicht geprüft.
-- v2 hängte außerdem in einem Wissensdokument mehr als v1 Zitate um; welche der beiden
+- v2 hängte außerdem in einem Wissensdokument mehr als v1 Zitate um, also in einem zusätzlichen
+  Dokument; welche der beiden
   Varianten stimmt, wurde nicht geprüft.
 
 **Lesart:** Diesmal lag v2 auf Ticket B vorn und auf Ticket A gleichauf. Zusammen mit der
@@ -185,17 +189,19 @@ etwas gründlicher". Mit einem Lauf pro Version und Ticket und der Streuung zwis
 ## 7. Fazit
 
 1. **Die Blocker der ersten Runde bestehen weiter.** Rechte-Standard, Lücke bei
-   Shell-Pfad-Argumenten und AGENTS.md-Suche sind in 2.1 unverändert. Der stille Abbruch ist
+   Shell-Pfad-Argumenten und (laut Quellcode) AGENTS.md-Suche sind in 2.1 unverändert. Der stille Abbruch ist
    in v2 weiter behoben und in 1.19 weiter vorhanden.
-2. **Ein neuer Blocker: die OS-Sandbox.** Seit der ersten Runde läuft die Lane in einer
-   macOS-Sandbox, die Schreibzugriffe im Wesentlichen nur auf den Worktree und die
-   Datenverzeichnisse von 1.19 erlaubt. 2.x startet dort ohne Profiländerung nicht. Weil die Sandbox Lesezugriffe weitgehend
-   offen lässt, schließt sie die Lücke bei Shell-Pfad-Argumenten auch nicht.
+2. **Ein offener Punkt: die OS-Sandbox.** Seit der ersten Runde läuft die Lane in einer
+   macOS-Sandbox. Unsere isolierte 2.x-Installation mit eigenen Datenverzeichnissen startet dort
+   nicht; eine 2.x-Installation in den Standardverzeichnissen von opencode wurde nicht getestet.
+   Entweder bekommt die Sandbox Regeln für getrennte Verzeichnisse, oder die
+   Standardverzeichnisse werden getestet.
 3. **Tempo: kein genereller Nachteil, aber mehr Arbeit pro Schritt auf großen Tickets.**
-   Gleich auf Ticket A, 1,85-mal langsamer auf Ticket B, innerhalb der Streuung von 1.19.
+   Gleich auf Ticket A, 1,85-mal langsamer auf Ticket B, knapp über dem langsamsten 1.19-Lauf
+   auf diesem Ticket.
 4. **Qualität: v2 tendenziell gründlicher.** Es schloss einmal eine bekannte Lücke von sich
    aus; beim symmetrischen Fall scheitern weiter beide Versionen, daher bleibt das Benennen
    symmetrischer Zweige im Brief der wahrscheinlichere Hebel.
 
 Wir bleiben bei 1.19 und schauen uns 2.x wieder an, wenn es das reguläre Release ist, dann mit
-mehreren Läufen pro Version und Ticket und mit Sandbox-Regeln für seine Verzeichnisse.
+mehreren Läufen pro Version und Ticket und in der Sandbox der Lane.

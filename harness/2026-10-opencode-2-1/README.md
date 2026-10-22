@@ -5,8 +5,8 @@
 # opencode 1.19 vs. opencode 2.1: the second round
 
 One week after the [first comparison](../2026-10-opencode-2/README.md) we measured again.
-opencode 2 had moved from 2.0.25 to 2.1.2, with more than 1,800 commits in between; the lane
-now runs 1.19.3. The questions: has 2.x fixed the behaviour that blocked a switch, and does
+opencode 2 had moved from 2.0.25 to 2.1.3, with more than 1,800 commits in between (the build we
+measured is 2.1.2); the lane now runs 1.19.3. The questions: has 2.x fixed the behaviour that blocked a switch, and does
 the picture on real tickets change when there are two of them?
 
 Like the first round, this is not an arena edition: no competing participants, no blind
@@ -17,12 +17,12 @@ a micro benchmark on toy tasks, and the replay of two real tickets.
 
 | Question | Answer |
 |---|---|
-| Is opencode 2 a drop-in replacement now? | **Still no.** The default permissions still allow everything, and shell commands still read paths outside the project through their arguments without asking, even with an explicit `ask` rule. In addition, 2.x does not start inside the lane's OS sandbox, because the sandbox denies writes to its data directories. |
+| Is opencode 2 a drop-in replacement now? | **Still no.** The default permissions still allow everything, and shell commands still read paths outside the project through their arguments without asking, even with an explicit `ask` rule. |
 | Is 2.x the regular release? | **No.** npm `latest` is 1.19.4; 2.x is still only published as development snapshots on npm and as git tags without release assets (up to v2.1.3). We used the Homebrew build 2.1.2. |
 | Silent abort after a denied permission? | Unchanged in both directions: 1.19.3 ended without a final report after every denial (3 of 3 micro runs, 1 real-ticket run); 2.1.2 continued and reported every time (2 of 2 micro runs, 1 real-ticket run). |
-| Faster? | On toy tasks 2 to 3 times faster, as before. On the two real tickets: about the same on one (690 s vs. 723 s), **1.85 times slower** on the other (1,644 s vs. 891 s). |
+| Faster? | On four of five toy tasks 1.8 to 2.9 times faster; slower on one, because it continued after a denial. On the two real tickets: about the same on one (690 s vs. 723 s), **1.85 times slower** on the other (1,644 s vs. 891 s). |
 | Better results? | Mixed. On one ticket 2.1.2 closed, on its own, a test gap that 1.19.3 repeated. On the other ticket both versions left one of two symmetric cases untested, each a different one. One run per version and ticket: a direction, not a finding. |
-| Decision | Stay on 1.19. A switch needs the permission rules from the first round, sandbox rules for the 2.x directories, and an answer to the shell path-argument gap. |
+| Decision | Stay on 1.19. A switch needs the permission rules from the first round, a test inside the lane's OS sandbox, and an answer to the shell path-argument gap. |
 
 ## 2. Setup
 
@@ -32,9 +32,9 @@ a micro benchmark on toy tasks, and the replay of two real tickets.
 | Effort | Variant `xhigh` in both versions. |
 | Arm v1 | opencode **1.19.3**, the version the lane runs in production (`opencode run --format json`). |
 | Arm v2 | opencode **2.1.2** from the Homebrew bottle (`run --standalone --format json`), installed in isolation with its own config, data, state and cache directories. |
-| Permissions | v1: its default (access outside the project: `ask`). v2: the two rules from the first round (`external_directory` ask, `question` deny), this time in v2's own config file, because the launcher that starts v2 now passes only an allowlist of environment variables to the model process and drops `OPENCODE_CONFIG_CONTENT`. The effective rules were read back with `opencode debug agents`. |
+| Permissions | v1: its default (access outside the project: `ask`). v2: the two rules from the first round (`external_directory` ask, `question` deny), this time written into v2's own config file instead of an environment variable. The effective rules were read back with `opencode debug agents`. |
 | Working directories | Fresh clones outside the user's home directory for every run, so v2's AGENTS.md discovery could not reach a workspace file. In the clones the default branch was pinned to the base commit and pushing was disabled. |
-| Launch | opencode was started directly, not through the lane's run wrapper, because the wrapper runs opencode inside an OS sandbox in which v2 does not start (section 3). |
+| Launch | opencode was started directly, not through the lane's run wrapper, because the wrapper runs opencode inside an OS sandbox in which our isolated v2 install does not start (section 3). |
 | Counting | Tokens, steps and tool calls from each session's full export. |
 | Quality check | After every run: the full test suites of the solution, plus mutation probes on exactly the test gaps that the review of the original production run had found. |
 
@@ -75,13 +75,14 @@ twice, because the first run ended without a report (section 4).
 | Shell, path as argument (`cat ../outside/note.txt`) | denied | **runs without a permission request, file content printed** | unchanged, now measured in the micro benchmark |
 | Shell, after a denied `cd ../..` | ends | continues and lists `../outside` with `ls -la ../outside`, again without a request | new observation |
 | AGENTS.md discovery | stops at the git root | by the source of v2.1.3 still walks up to the home directory | unchanged in the source; not exercised here, all clones lay outside the home directory |
-| Inside the lane's OS sandbox (macOS `sandbox-exec`, write access essentially only to the worktree and the 1.19 data directories) | runs | **does not start**: exit 1, write to its own log file denied | new; a profile change would be needed |
+| Inside the lane's OS sandbox (macOS `sandbox-exec`, write access essentially only to the worktree and opencode's default data directories) | runs | our isolated install, which uses its own data directories, **does not start**: exit 1, write to its own log file denied | new; a 2.x install in the default directories was not tested |
 | Release channel | npm `latest` 1.19.4 | npm dev snapshots, git tags up to v2.1.3 without assets, Homebrew 2.1.2 | still not the regular release |
 
 The changelog between 2.0.25 and 2.1.3 contains a "v2.1 minor breaking changes" commit
 (session, compaction and protocol types) and a fix that tolerates denied file system access
 during startup in sandboxes. The shell permission code changed by eight lines (parser
-selection), the AGENTS.md walk not at all.
+selection); the file with the AGENTS.md discovery changed, but the rule that ends the walk at
+the home directory did not.
 
 ## 4. Speed
 
@@ -98,7 +99,7 @@ selection), the AGENTS.md walk not at all.
 The pattern of the first round holds: v1 sends about 11.9k prompt tokens per session that
 miss the server's prompt cache; v2 about 2.1k (2.0.25: about 0.5k). v2 is slower only in
 `shell`, because it went on after the denial (three steps instead of one). `edit`: tests
-green in both, v1 with 7 tool calls in 8 steps, v2 with 5 in 4.
+green in both, v1 with 7 tool calls in 8 steps, v2 with 5 in 5.
 
 ### Real tickets (one run each, ticket A on v1 twice)
 
@@ -124,11 +125,11 @@ green in both, v1 with 7 tool calls in 8 steps, v2 with 5 in 4.
 - **Ticket A:** with a complete run on both sides the two versions are equally fast (723 s
   vs. 690 s, 11 s per step in both).
 - **Ticket B:** v2 needed 1.85 times as long, with about as many steps but 1.33 instead of
-  1.02 tool calls per step and nearly twice the output. Test runs were the same in number
-  (16 in each arm), mutation probe runs were not (9 vs. 5).
+  1.02 tool calls per step and nearly twice the output. v2 ran more mutation probes than v1.
 - **Variance on 1.19 is large.** The production run of ticket B on the same version 1.19.3
-  took 1,575 s, the replay 891 s. v2's 1,644 s is therefore within the range that 1.19 has
-  shown on this ticket. On ticket A, 1.19 now has three times: 605 s (production), 596 s
+  took 1,575 s, the replay 891 s. v2's 1,644 s is slightly above the upper end of
+  that span. The production run ran under different conditions (inside the run wrapper, in a
+  worktree below the home directory), so the span is not a clean variance estimate. On ticket A, 1.19 now has three times: 605 s (production), 596 s
   (first round) and 723 s (this round).
 
 ## 5. Result quality
@@ -160,7 +161,7 @@ found, plus the symmetric counterpart on ticket A.
   not compile against its code and that it used the closest compiling forms; v1 listed all
   four as killed in literal or near-literal form. Whether the literal forms would have
   compiled against v1's code was not checked.
-- v2 also re-pointed citations in one more knowledge document than v1; which of the two is
+- v2 also re-pointed citations in one more knowledge document than v1 did; which of the two is
   right was not checked.
 
 **Reading:** this time v2 was ahead on ticket B and level on ticket A. Together with the
@@ -182,17 +183,17 @@ somewhat more thorough". With one run per version and ticket and the run-to-run 
 ## 7. Conclusion
 
 1. **The blockers from the first round are still there.** The permission defaults, the
-   shell path-argument gap and the AGENTS.md walk are unchanged in 2.1. The silent abort is
+   shell path-argument gap and (by the source) the AGENTS.md walk are unchanged in 2.1. The silent abort is
    still fixed in v2 and still present in 1.19.
-2. **A new blocker: the OS sandbox.** Since the first round the lane runs inside a macOS
-   sandbox that allows writes essentially only to the worktree and the 1.19 data directories. 2.x does
-   not start there without profile changes. Because the sandbox leaves reads largely open, it
-   does not close the shell path-argument gap either.
+2. **An open point: the OS sandbox.** Since the first round the lane runs inside a macOS
+   sandbox. Our isolated 2.x install, with its own data directories, does not start there; a
+   2.x install in opencode's default directories was not tested. Either the sandbox gets
+   rules for separate directories, or the default directories are tested.
 3. **Speed: no general penalty, but more work per step on large tickets.** Equal on ticket
-   A, 1.85 times slower on ticket B, within the variance of 1.19.
+   A, 1.85 times slower on ticket B, slightly above the slowest 1.19 run on that ticket.
 4. **Quality: v2 tends to be more thorough.** It closed a known gap on its own once; on the
    symmetric case both versions still fail, so naming symmetric branches in the brief
    remains the more likely lever.
 
 We stay on 1.19 and look at 2.x again when it becomes the regular release, then with several
-runs per version and ticket and with the sandbox rules for its directories.
+runs per version and ticket and inside the lane's sandbox.
