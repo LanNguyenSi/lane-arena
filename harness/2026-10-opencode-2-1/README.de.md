@@ -20,9 +20,9 @@ Tickets.
 |---|---|
 | Ist opencode 2 jetzt ein direkter Ersatz? | **Weiterhin nein.** Die Standardrechte erlauben weiter alles, und Shell-Befehle lesen weiter über ihre Argumente Pfade außerhalb des Projekts, ohne zu fragen, auch mit expliziter `ask`-Regel. |
 | Ist 2.x das reguläre Release? | **Nein.** npm `latest` ist 1.19.4; 2.x gibt es auf npm weiter nur als Entwicklungs-Snapshots und als Git-Tags ohne Release-Dateien (bis v2.1.3). Wir haben den Homebrew-Build 2.1.2 genutzt. |
-| Stiller Abbruch nach abgelehnter Rückfrage? | In beide Richtungen unverändert: 1.19.3 endete nach jeder Ablehnung ohne Abschlussbericht (3 von 3 Mikro-Läufen, 1 Ticket-Lauf); 2.1.2 arbeitete jedes Mal weiter und berichtete (2 von 2 Mikro-Läufen, 1 Ticket-Lauf). |
-| Schneller? | Auf vier von fünf Spielaufgaben 1,8- bis 2,9-mal schneller; auf einer langsamer, weil es nach einer Ablehnung weiterarbeitete. Auf den zwei echten Tickets: beim einen etwa gleich (690 s gegen 723 s), beim anderen **1,85-mal langsamer** (1.644 s gegen 891 s). |
-| Bessere Ergebnisse? | Gemischt. Auf einem Ticket schloss 2.1.2 von sich aus eine Testlücke, die 1.19.3 wiederholte. Auf dem anderen ließen beide Versionen einen von zwei symmetrischen Fällen ungetestet, jede einen anderen. Ein Lauf pro Version und Ticket: eine Richtung, kein Befund. |
+| Stiller Abbruch nach abgelehnter Rückfrage? | In beide Richtungen unverändert: 1.19.3 endete nach jeder Ablehnung ohne Abschlussbericht (3 von 3 Mikro-Läufen); 2.1.2 arbeitete jedes Mal weiter und berichtete (2 von 2 Mikro-Läufen, 1 Ticket-Lauf). |
+| Schneller? | Auf vier von fünf Spielaufgaben 1,8- bis 2,9-mal schneller; auf einer langsamer, weil es nach einer Ablehnung weiterarbeitete. Auf den echten Tickets: bei Ticket A etwa gleich (690 s gegen 723 s); bei Ticket B im Mittel über je zwei Läufe **etwa 1,5-mal langsamer** (1.620 s gegen 1.110 s), wobei v2 konstant läuft und 1.19 stark streut. |
+| Bessere Ergebnisse? | Höchstens etwas. Auf Ticket B schloss 2.1.2 in einem von zwei Läufen von sich aus eine bekannte Testlücke, 1.19.3 in keinem. Auf Ticket A ließen beide Versionen einen von zwei symmetrischen Fällen ungetestet, jede einen anderen. Wenige Läufe: eine Richtung, kein Befund. |
 | Entscheidung | Bei 1.19 bleiben. Ein Umstieg braucht die Rechte-Regeln aus der ersten Runde, einen Test in der OS-Sandbox der Lane und eine Antwort auf die Lücke bei Shell-Pfad-Argumenten. |
 
 ## 2. Aufbau
@@ -57,15 +57,15 @@ gegenüber der ersten Runde: `shellarg`, das einen Pfad außerhalb als Shell-Arg
 
 Beide Tickets sind **Wiederholungen**: Tickets, die die Lane schon produktiv auf 1.19 gelöst
 hatte, erneut ausgeführt mit dem **wörtlichen Original-Brief** auf demselben Basis-Commit, ein
-frischer Klon pro Arm.
+frischer Klon pro Lauf.
 
 | Ticket | Inhalt | Produktivlauf auf 1.19 | Bekannte Lücke aus dem Produktiv-Review |
 |---|---|---|---|
 | **A: Dashboard-Credentials** (wie in der ersten Runde) | Backend Hono/Prisma, Frontend Next.js, Doku: eine Dashboard-Übersicht markiert einen verbundenen Dienst, dessen gespeichertes Credential nicht mehr entschlüsselt werden kann, als "unreadable". Neue Tests, Doku-Updates, eine Mutationsprüfung pro neuem Zweig. | 605 s (1.19.0) | das Überspringen der Downstream-Aufrufe für unlesbare Dienste war für einen Dienst getestet, für den anderen nicht (2 überlebende Mutanten) |
 | **B: Helfer zusammenführen** (neu) | Eine TypeScript-CLI mit rund 4.650 Tests: drei doppelt implementierte Helfer (Shell-Quoting, ein Parser für den Hooks-Block einer Settings-Datei, eine Test-Fixture) werden zu je einem zusammengeführt, mit einem Paritätstest, der jede Eingabeform durch beide Aufrufer schickt, vier benannten Mutationsprüfungen, einem Changelog-Eintrag und umgehängten Zeilenzitaten in den Wissensdokumenten des Projekts. | 1.575 s (1.19.3) | der Event-Name in einer der Fehlermeldungen des Parsers war durch keinen Test festgenagelt (1 überlebende Mutante) |
 
-Reihenfolge der Arme: Ticket A zuerst v2, dann v1; Ticket B zuerst v1, dann v2. Ticket A lief
-auf v1 zweimal, weil der erste Lauf ohne Bericht endete (Abschnitt 4).
+Reihenfolge der Arme: Ticket A zuerst v2, dann v1; Ticket B in zwei Runden, erst v1 dann v2,
+dann v2 dann v1.
 
 ## 3. Verhalten: was sich seit 2.0.25 geändert hat
 
@@ -103,44 +103,58 @@ Prompt-Cache des Servers vorbeigehen; v2 etwa 2,1k (2.0.25: etwa 0,5k). Langsame
 bei `shell`, weil es nach der Ablehnung weiterarbeitete (drei Schritte statt einem). `edit`:
 Tests in beiden grün, v1 mit 7 Tool-Aufrufen in 8 Schritten, v2 mit 5 in 5.
 
-### Echte Tickets (je ein Lauf, Ticket A auf v1 zweimal)
+### Echte Tickets
 
-| | A v1 Lauf 1 | A v1 Lauf 2 | A v2 | B v1 | B v2 |
-|---|---|---|---|---|---|
-| Wandzeit | 380 s | 723 s | 690 s | 891 s | 1.644 s |
-| Produktivlauf (1.19) | 605 s | | | 1.575 s | |
-| Schritte | 29 | 65 | 63 | 101 | 97 |
-| Sekunden pro Schritt | 13,1 | 11,1 | 11,0 | 8,8 | 16,9 |
-| Tool-Aufrufe | 41 | 84 | 85 | 103 | 129 |
-| Prompt-Tokens inkl. Cache | 0,88 M | 3,80 M | 3,18 M | 6,59 M | 10,14 M |
-| Output-Tokens | 20,0k | 36,3k | 36,0k | 38,5k | 71,9k |
-| Abgelehnte Rückfragen | 1 | 0 | 1 | 0 | 0 |
-| Abschlussbericht | **nein** | ja | ja | ja | ja |
+Ticket A, ein Lauf pro Version:
 
-- **Ticket A, Lauf 1 auf v1** endete nach 380 s mitten in der Verifikation: ein Shell-Befehl
-  der Form `cd backend && ...; cd .. && ...` wurde abgelehnt (die Rechte-Prüfung wertete das
-  `cd ..` als Verlassen des Projektverzeichnisses), und 1.19.3 hörte ohne Abschlussbericht
-  auf. Im Produktivbetrieb würde der Lauf-Wrapper der Lane diesen Lauf als gescheitert werten,
-  ein Fortsetzungs-Brief würde folgen. v2 traf gegen Ende seines Laufs eine Ablehnung
-  derselben Form (`cd frontend && ...; cd .. && ...`) und endete mit einem Bericht.
-- **Ticket A:** Mit je einem vollständigen Lauf sind beide Versionen gleich schnell (723 s
-  gegen 690 s, in beiden 11 s pro Schritt).
-- **Ticket B:** v2 brauchte 1,85-mal so lange, bei etwa gleich vielen Schritten, aber 1,33
-  statt 1,02 Tool-Aufrufen pro Schritt und fast doppelt so viel Output. v2 fuhr mehr
-  Mutationsproben als v1.
-- **Die Streuung auf 1.19 ist groß.** Der Produktivlauf von Ticket B auf derselben Version
-  1.19.3 dauerte 1.575 s, die Wiederholung 891 s. Die 1.644 s von v2 liegen knapp über dem oberen
-  Ende dieser Spanne. Der Produktivlauf lief unter anderen Bedingungen (im Lauf-Wrapper, in einem
-  Worktree unterhalb des Home-Verzeichnisses), die Spanne ist also keine saubere Schätzung der
-  Streuung. Für Ticket A hat 1.19 jetzt drei Zeiten:
-  605 s (produktiv), 596 s (erste Runde) und 723 s (diese Runde).
+| | v1 | v2 |
+|---|---|---|
+| Wandzeit | 723 s | 690 s |
+| Produktivlauf (1.19) | 605 s | |
+| Schritte | 65 | 63 |
+| Sekunden pro Schritt | 11,1 | 11,0 |
+| Tool-Aufrufe | 84 | 85 |
+| Prompt-Tokens inkl. Cache | 3,80 M | 3,18 M |
+| Output-Tokens | 36,3k | 36,0k |
+| Abgelehnte Rückfragen | 0 | 1 |
+| Abschlussbericht | ja | ja |
+
+Ticket B, zwei Läufe pro Version:
+
+| | v1 Lauf 1 | v1 Lauf 2 | v2 Lauf 1 | v2 Lauf 2 |
+|---|---|---|---|---|
+| Wandzeit | 891 s | 1.330 s | 1.644 s | 1.595 s |
+| Produktivlauf (1.19) | 1.575 s | | | |
+| Schritte | 101 | 133 | 97 | 85 |
+| Sekunden pro Schritt | 8,8 | 10,0 | 16,9 | 18,8 |
+| Tool-Aufrufe | 103 | 144 | 129 | 109 |
+| Prompt-Tokens inkl. Cache | 6,59 M | 10,09 M | 10,14 M | 9,75 M |
+| Output-Tokens | 38,5k | 55,1k | 71,9k | 67,3k |
+| Abgelehnte Rückfragen | 0 | 0 | 0 | 0 |
+| Abschlussbericht | ja | ja | ja | ja |
+
+- **Ticket A:** beide Versionen gleich schnell (723 s gegen 690 s, in beiden 11 s pro
+  Schritt). Gegen Ende seines Laufs wurde bei v2 ein Shell-Befehl der Form
+  `cd frontend && ...; cd .. && ...` abgelehnt (die Rechte-Prüfung wertete das `cd ..` als
+  Verlassen des Projektverzeichnisses); v2 arbeitete weiter und endete mit einem Bericht.
+- **Ticket B:** v2 brauchte 1.644 s und 1.595 s, 1.19 brauchte 891 s und 1.330 s (und
+  1.575 s im Produktivbetrieb). Im Mittel brauchte v2 etwa 1,5-mal so lange (1.620 s gegen
+  1.110 s). v2 läuft konstant, 1.19 nicht: seine drei Zeiten auf diesem Ticket liegen um den
+  Faktor 1,8 auseinander. Der Produktivlauf lief unter anderen Bedingungen (im Lauf-Wrapper,
+  in einem Worktree unterhalb des Home-Verzeichnisses); er weitet die Spanne, ist aber keine
+  saubere Wiederholung.
+- **Wohin die Zeit von v2 geht:** weniger oder gleich viele Schritte wie 1.19, aber jeder
+  dauert länger (17 bis 19 s gegen 9 bis 10 s), mit mehr Tool-Aufrufen und mehr Output pro
+  Schritt.
+- **Ticket A im Verlauf:** auf 1.19 hat dieses Ticket jetzt drei Zeiten: 605 s (produktiv),
+  596 s (erste Runde) und 723 s (diese Runde).
 
 ## 5. Qualität der Ergebnisse
 
 Alle vollständigen Läufe hinterließen grüne Testsuiten: Ticket A Backend 270 von 270 und
-Frontend 32 von 32 (v1), Backend 269 von 269 und Frontend 30 von 30 (v2); Ticket B 4.651 (v1)
-und 4.656 (v2) bestandene Tests in 164 Dateien, Build und Typprüfung sauber. Alle Berichte
-führten ihre geforderten Mutationsprüfungen als killed.
+Frontend 32 von 32 (v1), Backend 269 von 269 und Frontend 30 von 30 (v2); Ticket B 4.651 und
+4.659 (v1) sowie 4.656 und 4.655 (v2) bestandene Tests in 164 Dateien, Build und Typprüfung
+sauber. Alle Berichte führten ihre geforderten Mutationsprüfungen als killed.
 
 Die eigentliche Prüfung: eigene Mutationsproben genau auf die Lücken, die der
 Produktiv-Review gefunden hatte, dazu auf Ticket A das symmetrische Gegenstück.
@@ -151,31 +165,37 @@ Produktiv-Review gefunden hatte, dazu auf Ticket A das symmetrische Gegenstück.
 | A: Deployment-Dienst, Apps-Aufruf ignoriert "unreadable" | überlebt | killed |
 | A: Task-Dienst, Projekte-Aufruf ignoriert "unreadable" | killed | **überlebt** |
 | A: Task-Dienst, Claimable-Aufruf ignoriert "unreadable" | killed | **überlebt** |
-| B: Event-Name in der Parser-Fehlermeldung durch eine Konstante ersetzt | **überlebt** | killed |
+| B Lauf 1: Event-Name in der Parser-Fehlermeldung durch eine Konstante ersetzt | **überlebt** | killed |
+| B Lauf 2: dieselbe Probe | **überlebt** | **überlebt** |
 
 - **Ticket A:** v1 wiederholt die Produktiv-Lücke exakt, wie schon in der ersten Runde. v2
   deckt diesen Dienst ab und lässt dafür den anderen offen. Keine Version testet den
   symmetrischen Fall von sich aus; es verschiebt sich nur, welche Seite fehlt. Der Brief
   nannte die Zweige, nicht ihre Symmetrie.
-- **Ticket B:** v2 ergänzte einen Test für einen Settings-Block mit mehreren Events, bei dem
-  erst ein späterer fehlerhaft ist, und prüft, dass der Fehler genau dieses Event nennt. Das
-  schließt die Produktiv-Lücke. v1 wiederholt sie.
-- **Berichte:** v2 meldete, dass zwei der im Brief wörtlich vorgegebenen Mutationen gegen
-  seinen Code nicht kompilierten und es die nächstliegenden kompilierbaren Formen nutzte; v1
-  führte alle vier in wörtlicher oder fast wörtlicher Form als killed. Ob die wörtlichen
-  Formen gegen den Code von v1 kompiliert hätten, wurde nicht geprüft.
-- v2 hängte außerdem in einem Wissensdokument mehr als v1 Zitate um, also in einem zusätzlichen
-  Dokument; welche der beiden
-  Varianten stimmt, wurde nicht geprüft.
+- **Ticket B:** im ersten Lauf ergänzte v2 einen Test für einen Settings-Block mit mehreren
+  Events, bei dem erst ein späterer fehlerhaft ist, und prüft, dass der Fehler genau dieses
+  Event nennt. Das schließt die Produktiv-Lücke. Im zweiten Lauf tat es das nicht; v1
+  wiederholt die Lücke in beiden Läufen.
+- **Berichte (Ticket B, Lauf 1):** v2 meldete, dass zwei der im Brief wörtlich vorgegebenen
+  Mutationen gegen seinen Code nicht kompilierten und es die nächstliegenden kompilierbaren
+  Formen nutzte; v1 führte alle vier in wörtlicher oder fast wörtlicher Form als killed. Ob
+  die wörtlichen Formen gegen den Code von v1 kompiliert hätten, wurde nicht geprüft.
+- In Lauf 1 hängte v2 außerdem in einem Wissensdokument mehr als v1 Zitate um, also in einem
+  zusätzlichen Dokument; welche der beiden Varianten stimmt, wurde nicht geprüft.
 
-**Lesart:** Diesmal lag v2 auf Ticket B vorn und auf Ticket A gleichauf. Zusammen mit der
+**Lesart:** v2 schloss in vier Anläufen (zwei Tickets, zwei Läufe auf B) einmal eine bekannte
+Lücke, v1 nie; auf Ticket A verfehlen beide je eine symmetrische Seite. Zusammen mit der
 ersten Runde (Ticket A, 2.0.25 gründlicher, aber mit derselben Lücke) lautet die Richtung "v2
-etwas gründlicher". Mit einem Lauf pro Version und Ticket und der Streuung zwischen Läufen auf
-1.19 lässt sich das weiterhin nicht vom Zufall trennen.
+etwas gründlicher", nicht mehr. Mit so wenigen Läufen lässt sich das weiterhin nicht vom
+Zufall trennen.
 
 ## 6. Grenzen
 
-- Ein Lauf pro Version und Ticket (Ticket A v1: zwei). Keine abwechselnden Wiederholungen.
+- Ticket A: ein Lauf pro Version; Ticket B: zwei Läufe pro Version in wechselnder Reihenfolge.
+- Ticket A musste auf v1 zweimal gestartet werden: der erste Lauf traf eine Ablehnung
+  derselben Form wie bei v2 und endete nach 380 s ohne Abschlussbericht (im Produktivbetrieb
+  wertet der Lauf-Wrapper der Lane einen solchen Lauf als gescheitert). Die Tabellen zeigen den
+  wiederholten, vollständigen Lauf.
 - Die Arme liefen direkt, nicht in der OS-Sandbox der Lane. Auch die Produktivläufe liefen
   nicht in dieser Sandbox; sie kam erst danach.
 - Die Verifikation von Ticket B lief mit 60 s Test-Timeout: der Basis-Commit enthält noch
@@ -196,12 +216,12 @@ etwas gründlicher". Mit einem Lauf pro Version und Ticket und der Streuung zwis
    nicht; eine 2.x-Installation in den Standardverzeichnissen von opencode wurde nicht getestet.
    Entweder bekommt die Sandbox Regeln für getrennte Verzeichnisse, oder die
    Standardverzeichnisse werden getestet.
-3. **Tempo: kein genereller Nachteil, aber mehr Arbeit pro Schritt auf großen Tickets.**
-   Gleich auf Ticket A, 1,85-mal langsamer auf Ticket B, knapp über dem langsamsten 1.19-Lauf
-   auf diesem Ticket.
-4. **Qualität: v2 tendenziell gründlicher.** Es schloss einmal eine bekannte Lücke von sich
-   aus; beim symmetrischen Fall scheitern weiter beide Versionen, daher bleibt das Benennen
-   symmetrischer Zweige im Brief der wahrscheinlichere Hebel.
+3. **Tempo: gleich auf dem mittleren Ticket, etwa 1,5-mal langsamer auf dem großen.** v2
+   braucht auf Ticket B länger pro Schritt und läuft bemerkenswert konstant (1.644 s und
+   1.595 s); 1.19 streut auf demselben Ticket um den Faktor 1,8.
+4. **Qualität: mit v2 höchstens etwas besser.** Es schloss in zwei Läufen einmal von sich aus
+   eine bekannte Lücke, 1.19 nie; beim symmetrischen Fall scheitern weiter beide Versionen,
+   daher bleibt das Benennen symmetrischer Zweige im Brief der wahrscheinlichere Hebel.
 
 Wir bleiben bei 1.19 und schauen uns 2.x wieder an, wenn es das reguläre Release ist, dann mit
 mehreren Läufen pro Version und Ticket und in der Sandbox der Lane.

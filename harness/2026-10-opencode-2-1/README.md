@@ -19,9 +19,9 @@ a micro benchmark on toy tasks, and the replay of two real tickets.
 |---|---|
 | Is opencode 2 a drop-in replacement now? | **Still no.** The default permissions still allow everything, and shell commands still read paths outside the project through their arguments without asking, even with an explicit `ask` rule. |
 | Is 2.x the regular release? | **No.** npm `latest` is 1.19.4; 2.x is still only published as development snapshots on npm and as git tags without release assets (up to v2.1.3). We used the Homebrew build 2.1.2. |
-| Silent abort after a denied permission? | Unchanged in both directions: 1.19.3 ended without a final report after every denial (3 of 3 micro runs, 1 real-ticket run); 2.1.2 continued and reported every time (2 of 2 micro runs, 1 real-ticket run). |
-| Faster? | On four of five toy tasks 1.8 to 2.9 times faster; slower on one, because it continued after a denial. On the two real tickets: about the same on one (690 s vs. 723 s), **1.85 times slower** on the other (1,644 s vs. 891 s). |
-| Better results? | Mixed. On one ticket 2.1.2 closed, on its own, a test gap that 1.19.3 repeated. On the other ticket both versions left one of two symmetric cases untested, each a different one. One run per version and ticket: a direction, not a finding. |
+| Silent abort after a denied permission? | Unchanged in both directions: 1.19.3 ended without a final report after every denial (3 of 3 micro runs); 2.1.2 continued and reported every time (2 of 2 micro runs, 1 real-ticket run). |
+| Faster? | On four of five toy tasks 1.8 to 2.9 times faster; slower on one, because it continued after a denial. On the real tickets: about the same on ticket A (690 s vs. 723 s); on ticket B **about 1.5 times slower** on average over two runs each (1,620 s vs. 1,110 s), with v2 steady and 1.19 varying widely. |
+| Better results? | Slightly, at most. On ticket B 2.1.2 closed a known test gap on its own in one of two runs; 1.19.3 in neither. On ticket A both versions left one of two symmetric cases untested, each a different one. Few runs: a direction, not a finding. |
 | Decision | Stay on 1.19. A switch needs the permission rules from the first round, a test inside the lane's OS sandbox, and an answer to the shell path-argument gap. |
 
 ## 2. Setup
@@ -55,15 +55,15 @@ compared to the first round: `shellarg`, which reads an outside path as a shell 
 ### Real tickets
 
 Both tickets are **replays**: tickets the lane had already solved in production on 1.19, run
-again with the **verbatim original brief** on the same base commit, one fresh clone per arm.
+again with the **verbatim original brief** on the same base commit, one fresh clone per run.
 
 | Ticket | Content | Production run on 1.19 | Known gap from the production review |
 |---|---|---|---|
 | **A: dashboard credentials** (same as in the first round) | Backend Hono/Prisma, frontend Next.js, docs: a dashboard summary marks a connected service whose stored credential can no longer be decrypted as "unreadable". New tests, doc updates, one mutation check per new branch. | 605 s (1.19.0) | the skip of downstream calls for unreadable services was tested for one service but not for the other (2 surviving mutants) |
 | **B: helper consolidation** (new) | A TypeScript CLI with about 4,650 tests: three helpers implemented twice (shell quoting, a parser for the hooks block of a settings file, a test fixture) are merged into one each, with a parity test that feeds every input shape through both callers, four named mutation checks, a changelog entry and re-pointed line citations in the project's knowledge docs. | 1,575 s (1.19.3) | the event name in one of the parser's error messages was not pinned by any test (1 surviving mutant) |
 
-Order of the arms: ticket A v2 first, then v1; ticket B v1 first, then v2. Ticket A on v1 ran
-twice, because the first run ended without a report (section 4).
+Order of the arms: ticket A v2 first, then v1; ticket B two rounds, v1 then v2 and then v2
+then v1.
 
 ## 3. Behaviour: what changed since 2.0.25
 
@@ -101,43 +101,56 @@ miss the server's prompt cache; v2 about 2.1k (2.0.25: about 0.5k). v2 is slower
 `shell`, because it went on after the denial (three steps instead of one). `edit`: tests
 green in both, v1 with 7 tool calls in 8 steps, v2 with 5 in 5.
 
-### Real tickets (one run each, ticket A on v1 twice)
+### Real tickets
 
-| | A v1 run 1 | A v1 run 2 | A v2 | B v1 | B v2 |
-|---|---|---|---|---|---|
-| Wall time | 380 s | 723 s | 690 s | 891 s | 1,644 s |
-| Production run (1.19) | 605 s | | | 1,575 s | |
-| Steps | 29 | 65 | 63 | 101 | 97 |
-| Seconds per step | 13.1 | 11.1 | 11.0 | 8.8 | 16.9 |
-| Tool calls | 41 | 84 | 85 | 103 | 129 |
-| Prompt tokens incl. cache | 0.88 M | 3.80 M | 3.18 M | 6.59 M | 10.14 M |
-| Output tokens | 20.0k | 36.3k | 36.0k | 38.5k | 71.9k |
-| Denied permissions | 1 | 0 | 1 | 0 | 0 |
-| Final report | **no** | yes | yes | yes | yes |
+Ticket A, one run per version:
 
-- **Ticket A run 1 on v1** ended after 380 s in the middle of its verification: a shell
-  command of the form `cd backend && ...; cd .. && ...` was denied (the permission check
-  counted the `cd ..` as leaving the project directory), and 1.19.3 stopped without a final
-  report. In production the
-  lane's run wrapper would fail this run and a continuation brief would follow. v2 met a
-  denial of the same shape (`cd frontend && ...; cd .. && ...`) near the end of its run and
-  finished with a report.
-- **Ticket A:** with a complete run on both sides the two versions are equally fast (723 s
-  vs. 690 s, 11 s per step in both).
-- **Ticket B:** v2 needed 1.85 times as long, with about as many steps but 1.33 instead of
-  1.02 tool calls per step and nearly twice the output. v2 ran more mutation probes than v1.
-- **Variance on 1.19 is large.** The production run of ticket B on the same version 1.19.3
-  took 1,575 s, the replay 891 s. v2's 1,644 s is slightly above the upper end of
-  that span. The production run ran under different conditions (inside the run wrapper, in a
-  worktree below the home directory), so the span is not a clean variance estimate. On ticket A, 1.19 now has three times: 605 s (production), 596 s
+| | v1 | v2 |
+|---|---|---|
+| Wall time | 723 s | 690 s |
+| Production run (1.19) | 605 s | |
+| Steps | 65 | 63 |
+| Seconds per step | 11.1 | 11.0 |
+| Tool calls | 84 | 85 |
+| Prompt tokens incl. cache | 3.80 M | 3.18 M |
+| Output tokens | 36.3k | 36.0k |
+| Denied permissions | 0 | 1 |
+| Final report | yes | yes |
+
+Ticket B, two runs per version:
+
+| | v1 run 1 | v1 run 2 | v2 run 1 | v2 run 2 |
+|---|---|---|---|---|
+| Wall time | 891 s | 1,330 s | 1,644 s | 1,595 s |
+| Production run (1.19) | 1,575 s | | | |
+| Steps | 101 | 133 | 97 | 85 |
+| Seconds per step | 8.8 | 10.0 | 16.9 | 18.8 |
+| Tool calls | 103 | 144 | 129 | 109 |
+| Prompt tokens incl. cache | 6.59 M | 10.09 M | 10.14 M | 9.75 M |
+| Output tokens | 38.5k | 55.1k | 71.9k | 67.3k |
+| Denied permissions | 0 | 0 | 0 | 0 |
+| Final report | yes | yes | yes | yes |
+
+- **Ticket A:** both versions equally fast (723 s vs. 690 s, 11 s per step in both). Near
+  the end of its run v2 had a shell command of the form `cd frontend && ...; cd .. && ...`
+  denied (the permission check counted the `cd ..` as leaving the project directory),
+  continued and finished with a report.
+- **Ticket B:** v2 took 1,644 s and 1,595 s, 1.19 took 891 s and 1,330 s (and 1,575 s in
+  production). On average v2 needed about 1.5 times as long (1,620 s vs. 1,110 s). v2 is
+  steady, 1.19 is not: its three times on this ticket span a factor of 1.8. The production
+  run ran under different conditions (inside the run wrapper, in a worktree below the home
+  directory), so it widens the span but is not a clean repeat.
+- **Where v2's time goes:** fewer or as many steps as 1.19, but each takes longer (17 to
+  19 s vs. 9 to 10 s), with more tool calls and more output per step.
+- **Ticket A history:** on 1.19 this ticket now has three times: 605 s (production), 596 s
   (first round) and 723 s (this round).
 
 ## 5. Result quality
 
 All complete runs left green test suites: ticket A backend 270 of 270 and frontend 32 of 32
-(v1), backend 269 of 269 and frontend 30 of 30 (v2); ticket B 4,651 (v1) and 4,656 (v2)
-passed tests in 164 files, build and type check clean. All reports listed their required
-mutation checks as killed.
+(v1), backend 269 of 269 and frontend 30 of 30 (v2); ticket B 4,651 and 4,659 (v1) and
+4,656 and 4,655 (v2) passed tests in 164 files, build and type check clean. All reports
+listed their required mutation checks as killed.
 
 The real test: our own mutation probes on exactly the gaps that the production review had
 found, plus the symmetric counterpart on ticket A.
@@ -148,30 +161,34 @@ found, plus the symmetric counterpart on ticket A.
 | A: deployment service, apps call ignores "unreadable" | survived | killed |
 | A: task service, projects call ignores "unreadable" | killed | **survived** |
 | A: task service, claimable call ignores "unreadable" | killed | **survived** |
-| B: event name in the parser error message replaced by a constant | **survived** | killed |
+| B run 1: event name in the parser error message replaced by a constant | **survived** | killed |
+| B run 2: the same probe | **survived** | **survived** |
 
 - **Ticket A:** v1 repeats the production gap exactly, as in the first round. v2 covers that
   service and leaves the other one open. Neither version tests the symmetric case on its
   own; it only shifts which side is missing. The brief named the branches, not their
   symmetry.
-- **Ticket B:** v2 added a test for a settings block with several events where only a later
-  one is malformed, and checks that the error names that event. This closes the production
-  gap. v1 repeats it.
-- **Reporting:** v2 reported that two of the mutations written literally in the brief did
-  not compile against its code and that it used the closest compiling forms; v1 listed all
-  four as killed in literal or near-literal form. Whether the literal forms would have
-  compiled against v1's code was not checked.
-- v2 also re-pointed citations in one more knowledge document than v1 did; which of the two is
-  right was not checked.
+- **Ticket B:** in its first run v2 added a test for a settings block with several events
+  where only a later one is malformed, and checks that the error names that event. This
+  closes the production gap. In its second run it did not; v1 repeats the gap in both runs.
+- **Reporting (ticket B run 1):** v2 reported that two of the mutations written literally in
+  the brief did not compile against its code and that it used the closest compiling forms;
+  v1 listed all four as killed in literal or near-literal form. Whether the literal forms
+  would have compiled against v1's code was not checked.
+- In run 1, v2 also re-pointed citations in one more knowledge document than v1 did; which
+  of the two is right was not checked.
 
-**Reading:** this time v2 was ahead on ticket B and level on ticket A. Together with the
-first round (ticket A, 2.0.25 more thorough but with the same gap), the direction is "v2
-somewhat more thorough". With one run per version and ticket and the run-to-run variance on
-1.19, that is still not separable from chance.
+**Reading:** v2 closed a known gap once in four attempts (two tickets, two runs on B), v1
+never; on ticket A both miss one symmetric side. Together with the first round (ticket A,
+2.0.25 more thorough but with the same gap), the direction is "v2 somewhat more thorough",
+not more. With these few runs that is still not separable from chance.
 
 ## 6. Limits
 
-- One run per version and ticket (ticket A v1: two). No alternating repetitions.
+- Ticket A: one run per version; ticket B: two runs per version in alternating order.
+- Ticket A on v1 had to be started twice: the first run hit a denial of the same shape as
+  v2's and ended after 380 s without a final report (in production the lane's run wrapper
+  fails such a run). The tables show the repeated, complete run.
 - The arms ran directly, not in the lane's OS sandbox. Neither production run ran inside
   that sandbox either; it was introduced afterwards.
 - The verification of ticket B used a 60 s test timeout: the base commit still contains a
@@ -189,11 +206,12 @@ somewhat more thorough". With one run per version and ticket and the run-to-run 
    sandbox. Our isolated 2.x install, with its own data directories, does not start there; a
    2.x install in opencode's default directories was not tested. Either the sandbox gets
    rules for separate directories, or the default directories are tested.
-3. **Speed: no general penalty, but more work per step on large tickets.** Equal on ticket
-   A, 1.85 times slower on ticket B, slightly above the slowest 1.19 run on that ticket.
-4. **Quality: v2 tends to be more thorough.** It closed a known gap on its own once; on the
-   symmetric case both versions still fail, so naming symmetric branches in the brief
-   remains the more likely lever.
+3. **Speed: equal on the medium ticket, about 1.5 times slower on the large one.** v2 takes
+   longer per step on ticket B and is remarkably steady (1,644 s and 1,595 s); 1.19 varies
+   by a factor of 1.8 on the same ticket.
+4. **Quality: at most slightly better with v2.** It closed a known gap on its own once in
+   two runs, 1.19 never; on the symmetric case both versions still fail, so naming
+   symmetric branches in the brief remains the more likely lever.
 
 We stay on 1.19 and look at 2.x again when it becomes the regular release, then with several
 runs per version and ticket and inside the lane's sandbox.
