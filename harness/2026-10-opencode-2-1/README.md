@@ -19,8 +19,8 @@ a micro benchmark on toy tasks, and the replay of two real tickets.
 |---|---|
 | Is opencode 2 a drop-in replacement now? | **Still no.** The default permissions still allow everything, and shell commands still read paths outside the project through their arguments without asking, even with an explicit `ask` rule. |
 | Is 2.x the regular release? | **No.** npm `latest` is 1.19.4; 2.x is still only published as development snapshots on npm and as git tags without release assets (up to v2.1.3). We used the Homebrew build 2.1.2. |
-| Silent abort after a denied permission? | Unchanged in both directions: 1.19.3 ended without a final report after every denial (3 of 3 micro runs); 2.1.2 continued and reported every time (2 of 2 micro runs, 1 real-ticket run). |
-| Faster? | On four of five toy tasks 1.8 to 2.9 times faster; slower on one, because it continued after a denial. On the real tickets: about the same on ticket A (690 s vs. 723 s); on ticket B **about 1.5 times slower** on average over two runs each (1,620 s vs. 1,110 s), with v2 steady and 1.19 varying widely. |
+| Silent abort after a denied permission? | Unchanged in both directions: 1.19.3 ended without a final report after every denial (3 of 3 micro runs, plus the aborted first run of ticket A, see section 6); 2.1.2 continued and reported every time (2 of 2 micro runs, 1 real-ticket run). |
+| Faster? | On four of five toy tasks 1.8 to 2.9 times faster; slower on one, because it continued after a denial. On the real tickets: about the same on ticket A (690 s vs. 723 s); on ticket B **about 1.5 times slower** on average over two runs each (1,620 s vs. 1,110 s), with v2 steady (1,644 s and 1,595 s) and 1.19 varying more (891 s and 1,330 s). |
 | Better results? | Slightly, at most. On ticket B 2.1.2 closed a known test gap on its own in one of two runs; 1.19.3 in neither. On ticket A both versions left one of two symmetric cases untested, each a different one. Few runs: a direction, not a finding. |
 | Decision | Stay on 1.19. A switch needs the permission rules from the first round, a test inside the lane's OS sandbox, and an answer to the shell path-argument gap. |
 
@@ -178,8 +178,8 @@ found, plus the symmetric counterpart on ticket A.
 - In run 1, v2 also re-pointed citations in one more knowledge document than v1 did; which
   of the two is right was not checked.
 
-**Reading:** v2 closed a known gap once in four attempts (two tickets, two runs on B), v1
-never; on ticket A both miss one symmetric side. Together with the first round (ticket A,
+**Reading:** on ticket B v2 closed the known gap in one of two runs, v1 in neither; on
+ticket A each version misses one of the two symmetric sides. Together with the first round (ticket A,
 2.0.25 more thorough but with the same gap), the direction is "v2 somewhat more thorough",
 not more. With these few runs that is still not separable from chance.
 
@@ -207,8 +207,9 @@ not more. With these few runs that is still not separable from chance.
    2.x install in opencode's default directories was not tested. Either the sandbox gets
    rules for separate directories, or the default directories are tested.
 3. **Speed: equal on the medium ticket, about 1.5 times slower on the large one.** v2 takes
-   longer per step on ticket B and is remarkably steady (1,644 s and 1,595 s); 1.19 varies
-   by a factor of 1.8 on the same ticket.
+   longer per step on ticket B and was steady in both runs (1,644 s and 1,595 s); 1.19
+   varies by a factor of about 1.5 across the two replays on the same ticket, 1.8 including
+   the production run.
 4. **Quality: at most slightly better with v2.** It closed a known gap on its own once in
    two runs, 1.19 never; on the symmetric case both versions still fail, so naming
    symmetric branches in the brief remains the more likely lever.

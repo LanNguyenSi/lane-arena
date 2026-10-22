@@ -20,8 +20,8 @@ Tickets.
 |---|---|
 | Ist opencode 2 jetzt ein direkter Ersatz? | **Weiterhin nein.** Die Standardrechte erlauben weiter alles, und Shell-Befehle lesen weiter über ihre Argumente Pfade außerhalb des Projekts, ohne zu fragen, auch mit expliziter `ask`-Regel. |
 | Ist 2.x das reguläre Release? | **Nein.** npm `latest` ist 1.19.4; 2.x gibt es auf npm weiter nur als Entwicklungs-Snapshots und als Git-Tags ohne Release-Dateien (bis v2.1.3). Wir haben den Homebrew-Build 2.1.2 genutzt. |
-| Stiller Abbruch nach abgelehnter Rückfrage? | In beide Richtungen unverändert: 1.19.3 endete nach jeder Ablehnung ohne Abschlussbericht (3 von 3 Mikro-Läufen); 2.1.2 arbeitete jedes Mal weiter und berichtete (2 von 2 Mikro-Läufen, 1 Ticket-Lauf). |
-| Schneller? | Auf vier von fünf Spielaufgaben 1,8- bis 2,9-mal schneller; auf einer langsamer, weil es nach einer Ablehnung weiterarbeitete. Auf den echten Tickets: bei Ticket A etwa gleich (690 s gegen 723 s); bei Ticket B im Mittel über je zwei Läufe **etwa 1,5-mal langsamer** (1.620 s gegen 1.110 s), wobei v2 konstant läuft und 1.19 stark streut. |
+| Stiller Abbruch nach abgelehnter Rückfrage? | In beide Richtungen unverändert: 1.19.3 endete nach jeder Ablehnung ohne Abschlussbericht (3 von 3 Mikro-Läufen, dazu der abgebrochene erste Lauf von Ticket A, siehe Abschnitt 6); 2.1.2 arbeitete jedes Mal weiter und berichtete (2 von 2 Mikro-Läufen, 1 Ticket-Lauf). |
+| Schneller? | Auf vier von fünf Spielaufgaben 1,8- bis 2,9-mal schneller; auf einer langsamer, weil es nach einer Ablehnung weiterarbeitete. Auf den echten Tickets: bei Ticket A etwa gleich (690 s gegen 723 s); bei Ticket B im Mittel über je zwei Läufe **etwa 1,5-mal langsamer** (1.620 s gegen 1.110 s), wobei v2 konstant läuft (1.644 s und 1.595 s) und 1.19 stärker streut (891 s und 1.330 s). |
 | Bessere Ergebnisse? | Höchstens etwas. Auf Ticket B schloss 2.1.2 in einem von zwei Läufen von sich aus eine bekannte Testlücke, 1.19.3 in keinem. Auf Ticket A ließen beide Versionen einen von zwei symmetrischen Fällen ungetestet, jede einen anderen. Wenige Läufe: eine Richtung, kein Befund. |
 | Entscheidung | Bei 1.19 bleiben. Ein Umstieg braucht die Rechte-Regeln aus der ersten Runde, einen Test in der OS-Sandbox der Lane und eine Antwort auf die Lücke bei Shell-Pfad-Argumenten. |
 
@@ -183,8 +183,8 @@ Produktiv-Review gefunden hatte, dazu auf Ticket A das symmetrische Gegenstück.
 - In Lauf 1 hängte v2 außerdem in einem Wissensdokument mehr als v1 Zitate um, also in einem
   zusätzlichen Dokument; welche der beiden Varianten stimmt, wurde nicht geprüft.
 
-**Lesart:** v2 schloss in vier Anläufen (zwei Tickets, zwei Läufe auf B) einmal eine bekannte
-Lücke, v1 nie; auf Ticket A verfehlen beide je eine symmetrische Seite. Zusammen mit der
+**Lesart:** Auf Ticket B schloss v2 die bekannte Lücke in einem von zwei Läufen, v1 in keinem;
+auf Ticket A verfehlt jede Version eine der beiden symmetrischen Seiten. Zusammen mit der
 ersten Runde (Ticket A, 2.0.25 gründlicher, aber mit derselben Lücke) lautet die Richtung "v2
 etwas gründlicher", nicht mehr. Mit so wenigen Läufen lässt sich das weiterhin nicht vom
 Zufall trennen.
@@ -217,8 +217,9 @@ Zufall trennen.
    Entweder bekommt die Sandbox Regeln für getrennte Verzeichnisse, oder die
    Standardverzeichnisse werden getestet.
 3. **Tempo: gleich auf dem mittleren Ticket, etwa 1,5-mal langsamer auf dem großen.** v2
-   braucht auf Ticket B länger pro Schritt und läuft bemerkenswert konstant (1.644 s und
-   1.595 s); 1.19 streut auf demselben Ticket um den Faktor 1,8.
+   braucht auf Ticket B länger pro Schritt und war in beiden Läufen ähnlich lang (1.644 s und
+   1.595 s); 1.19 streut auf demselben Ticket über die zwei Wiederholungen um etwa den Faktor
+   1,5, mit dem Produktivlauf um 1,8.
 4. **Qualität: mit v2 höchstens etwas besser.** Es schloss in zwei Läufen einmal von sich aus
    eine bekannte Lücke, 1.19 nie; beim symmetrischen Fall scheitern weiter beide Versionen,
    daher bleibt das Benennen symmetrischer Zweige im Brief der wahrscheinlichere Hebel.
