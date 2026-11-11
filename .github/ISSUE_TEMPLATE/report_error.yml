@@ -1,0 +1,19 @@
+name: Error in a report or slides
+description: A wrong number, an unsupported claim, a broken link or a translation mismatch
+labels: ["documentation"]
+body:
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: Edition or comparison, file or slide, and the section.
+      placeholder: "runs/2026-10-pilot/README.md, section Results"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What is wrong?
+      description: Quote the text and say what it should say, with a source if you have one.
+    validations:
+      required: true
