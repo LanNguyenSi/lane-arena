@@ -1,0 +1,16 @@
+name: Idea for an edition or comparison
+description: Propose a task type, participant, rule or measurement for a future run
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: What should a future edition or comparison test, and why?
+    validations:
+      required: true
+  - type: textarea
+    id: measure
+    attributes:
+      label: How would it be measured?
+      description: Optional. Which result would answer the question.
